@@ -21,6 +21,10 @@
 #
 # attbl (attribute table)
 # wasteful struct that loosely matches SEGA Saturn VDP1 command table
+#
+# cNorm (compressed normals)
+# Only produced for keyframes. A 1-byte index into an animation normal table, ANORM.h
+# System is broadly the same as Quake 2's.
 # 
 # NOTE:
 # This converter ***DOES NOT PRODUCE*** normals per vertice
