@@ -32,3 +32,11 @@
 # This converter ***IS INCOMPATIBLE*** with goraud shading and ZTP loading routines.
 # This converter ***WILL REORGANIZE*** the vertex order of each polygon to a consistent winding
 # This converter ***IS UNAWARE OF UV MAPS***.
+#
+
+A material file is to be supplied with the OBJ to specify which faces receive which texture.
+The following flags are supported for texture assignment:
+"DUAL_" as a prefix to specify a dual-plane polygon.
+"MESH_" as a prefix to specify a mesh-effect polygon.
+"MEDU_" as a prefix to specify a dual-plane mesh polygon.
+
