@@ -30,3 +30,5 @@
 # This converter ***DOES NOT PRODUCE*** normals per vertice
 # This converter ***DOES NOT PRODUCE*** RGB texture data in the binary
 # This converter ***IS INCOMPATIBLE*** with goraud shading and ZTP loading routines.
+# This converter ***WILL REORGANIZE*** the vertex order of each polygon to a consistent winding
+# This converter ***IS UNAWARE OF UV MAPS***.
