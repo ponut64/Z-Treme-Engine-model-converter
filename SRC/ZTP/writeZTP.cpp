@@ -2,7 +2,7 @@
 
 int USE_SGL = 1; //For now, default option?
 
-
+void writeU8(ofstream * file, unsigned char data);
 void writeUint16(ofstream * file, uint16_t data);
 void writeSint16(ofstream * file, int16_t data);
 void writeUint32(ofstream * file, uint32_t data);
@@ -15,57 +15,41 @@ VECTOR normLUT[] =
     #include "anorms.h"
 };
 
+/*
+Model data header
 
-
+0 byte: # of meshes
+2 byte: # of textures
+4 byte: total size of PDATA + compressed verts [rather, offset to end of]
+8 byte: total size of textures [rather, offset to end of]
+12 byte: # of keyframes
+14 byte: " " framerate " "
+16 byte: nothing
+19 byte: blank
+*/
 void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 {
     writeUint16(file, aModel->nbModels);
     writeUint16(file, aModel->nbTextures);
 
     uint32_t countSize = 0;
+    countSize=0;
+    for (uint32_t i = 0; i<aModel->nbModels; i++) {
+            countSize += aModel->model[i].nbPolygon * 20 ; //Each polygon = 20 bytes [12 bytes normal, 8 bytes vertices ID]
+            countSize += aModel->model[i].nbPoint * 12; //Each vertice = 4 bytes for each component x,y,z 
+    }
+
+        countSize += (aModel->nbFrames * aModel->model[0].nbPoint * 7); //Each compressed vertex is a sint16_t[3] + compressed normal, 1 byte
+        writeUint32(file, countSize);
+
+
     for (uint32_t i = 0; i<aModel->nbTextures; i++) {
-        countSize += (aModel->texture[i].height*aModel->texture[i].width)/2; //>>aModel->texture[i].colorDepth;
-        countSize += 12+32;//*aModel->texture[i].colorDepth; //If colorDepth = 0, then there is no color look-up table.
+        countSize += (aModel->texture[i].height * aModel->texture[i].width); //At this point, you would denote a size change for depth.
     }
     writeUint32(file, countSize);
 
     countSize=0;
-    for (uint32_t i = 0; i<aModel->nbModels; i++) {
-        if (USE_SGL)
-        {
-            countSize += aModel->model[i].nbPolygon * 20 ; //Each polygon = 12 bytes
-            countSize += aModel->model[i].nbPoint * 32;
-        }
-        else
-            countSize += aModel->model[i].nbPoint;
 
-    }
-    if (USE_SGL)
-    {
-        countSize += (aModel->nbFrames * aModel->model[0].nbPoint * 8); //Each compressed vertex is a sint16_t[3]
-        writeUint32(file, countSize);
-    }
-    else
-        writeUint16(file, countSize);
-
-    countSize=0;
-    if (!USE_SGL)
-    {
-        for (uint32_t i=0; i<aModel->nbModels; i++)
-        {
-            countSize+=aModel->model[i].nbPolygon;
-        }
-        writeUint16(file, countSize);
-    }
-
-    for (uint32_t i=0; i<3; i++) {
-            writeSint32(file, toFIXED(aModel->BoxMin[i]));
-            cout << (int)(aModel->BoxMin[i]) << ", ";
-    }
-    for (uint32_t i=0; i<3; i++) {
-            writeSint32(file, toFIXED(aModel->BoxMax[i]));
-            cout << (int)(aModel->BoxMax[i]) << ", ";
-    }
     cout << "\n";
 
     //Animation : Updated 2018/05/31
@@ -74,106 +58,456 @@ void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 
     writeUint32(file, 0x00000000);
 
-    if (!USE_SGL) {
-        for (uint32_t i = 0; i<9; i++) writeUint32(file, 0);
-    }
-
 }
 
-/**
-New Z-Treme engine format (no more SGL)
-
-typedef int16_t ZPOINT[4]; //vertex data = 3 Points, 1 color data. Use int8_t instead?
-
-typedef struct {
-    Uint8   vertices[4];
-    Uint16  texno;
-    Uint16  cmdctrl;
-    Uint16  cmdpmod;
-    Uint16  cmdcolr;
-} ZPOLYGON; //12 bytes each
-
-typedef struct {
-    Uint16 StartPoint;
-    Uint16 EndPoint;
-    Uint16 StartPol;
-    Uint16 EndPol;
-    Uint16 LightID; //A copy to transfer to the slave
-    Sint16 LightDistance;
-} ZPDATA;
-**/
-#define	    GRTBL(r,g,b)	        (((b&0x1f)<<10) | ((g&0x1f)<<5) | (r&0x1f) )
-uint16_t getColor(float * color)
+void	crossf(float vector1[3], float vector2[3], float output[3])
 {
-    uint16_t rgb[XYZ]={0};
-    const uint16_t maxColorBrightness=16;
-    rgb[0]=MIN((uint16_t)((color[0]+1.0f)*16), maxColorBrightness);
-    rgb[1]=MIN((uint16_t)((color[1]+1.0f)*16), maxColorBrightness);
-    rgb[2]=MIN((uint16_t)((color[2]+1.0f)*16), maxColorBrightness);
-
-    return GRTBL(rgb[0],rgb[1],rgb[2]);
+	output[0] = (vector1[1] * vector2[2]) - (vector1[2] * vector2[1]);
+	output[1] = (vector1[2] * vector2[0]) - (vector1[0] * vector2[2]);
+	output[2] = (vector1[0] * vector2[1]) - (vector1[1] * vector2[0]);
 }
 
-void WRITE_ZPDATA(ofstream * file, animated_model_t * aModel)
+void	fnormalize(float vec[3])
 {
+	float scalar = 1.0/sqrtf((vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]));
+	vec[0] = vec[0] * scalar;
+	vec[1] = vec[1] * scalar;
+	vec[2] = vec[2] * scalar;
+}
 
+float	fdot(float vec1[3], float vec2[3])
+{
+	return (vec1[0] * vec2[0]) + (vec1[1] * vec2[1]) + (vec1[2] * vec2[2]);
+}
 
-    uint16_t startPt=0;
-    uint16_t startPol=0;
-    //ZPDATA
-    for (unsigned int i=0; i<aModel->nbModels; i++){
-        model_t * m = &aModel->model[i];
+	void	rotate_by_rule(float verts[4][3], short * vIDs, int component, bool reverse)
+	{
+		float tempVert[3] = {0, 0, 0};
+		short tempID = 0;
+		int flipcnt = 0;
+		
+			if(reverse != true)
+				{
+		while(verts[0][component] < 0)
+			{
+				tempVert[0]	= verts[0][0];
+				tempVert[1]	= verts[0][1];
+				tempVert[2]	= verts[0][2];
+				
+				verts[0][0]	= verts[1][0];
+				verts[0][1]	= verts[1][1];
+				verts[0][2]	= verts[1][2];
+				
+				verts[1][0]	= verts[2][0];
+				verts[1][1]	= verts[2][1];
+				verts[1][2]	= verts[2][2];
+				
+				verts[2][0]	= verts[3][0];
+				verts[2][1]	= verts[3][1];
+				verts[2][2]	= verts[3][2];
+				
+				verts[3][0]	= tempVert[0];
+				verts[3][1]	= tempVert[1];
+				verts[3][2]	= tempVert[2];
+				
+				tempID	= vIDs[0];
+				vIDs[0]	= vIDs[1];
+				vIDs[1]	= vIDs[2];
+				vIDs[2]	= vIDs[3];
+				vIDs[3]	= tempID;
+				
+				flipcnt++;
+			}
+				} else {
+		while(verts[0][component] > 0)
+			{
+				tempVert[0]	= verts[0][0];
+				tempVert[1]	= verts[0][1];
+				tempVert[2]	= verts[0][2];
+				
+				verts[0][0]	= verts[1][0];
+				verts[0][1]	= verts[1][1];
+				verts[0][2]	= verts[1][2];
+				
+				verts[1][0]	= verts[2][0];
+				verts[1][1]	= verts[2][1];
+				verts[1][2]	= verts[2][2];
+				
+				verts[2][0]	= verts[3][0];
+				verts[2][1]	= verts[3][1];
+				verts[2][2]	= verts[3][2];
+				
+				verts[3][0]	= tempVert[0];
+				verts[3][1]	= tempVert[1];
+				verts[3][2]	= tempVert[2];
+				
+				tempID	= vIDs[0];
+				vIDs[0]	= vIDs[1];
+				vIDs[1]	= vIDs[2];
+				vIDs[2]	= vIDs[3];
+				vIDs[3]	= tempID;
+				
+				flipcnt++;
+			}
+				}
+	}
+	
+	void	permutate(float verts[4][3], short * vIDs) //counter-clockwise
+	{
+	float tempVert[3] = {0, 0, 0};
+	short tempID = 0;
+				tempVert[0]	= verts[0][0];
+				tempVert[1]	= verts[0][1];
+				tempVert[2]	= verts[0][2];
+				
+				verts[0][0]	= verts[1][0];
+				verts[0][1]	= verts[1][1];
+				verts[0][2]	= verts[1][2];
+				
+				verts[1][0]	= verts[2][0];
+				verts[1][1]	= verts[2][1];
+				verts[1][2]	= verts[2][2];
+				
+				verts[2][0]	= verts[3][0];
+				verts[2][1]	= verts[3][1];
+				verts[2][2]	= verts[3][2];
+				
+				verts[3][0]	= tempVert[0];
+				verts[3][1]	= tempVert[1];
+				verts[3][2]	= tempVert[2];
+				
+				tempID	= vIDs[0];
+				vIDs[0]	= vIDs[1];
+				vIDs[1]	= vIDs[2];
+				vIDs[2]	= vIDs[3];
+				vIDs[3]	= tempID;
+	}
+	
 
-        //points
-        writeUint16(file, startPt);
-        startPt += m->nbPoint;
-        writeUint16(file, startPt);
+void	poly_face_sort(polygon_t * poly, vertex_t * vList)
+{
+	short vIDs[4] = {0, 0, 0, 0};
+	float verts[4][3];
+	float center[3] = {0, 0, 0};
+		
+		//Load vertice IDs
+		vIDs[0] = poly->vertIdx[0];
+		vIDs[1] = poly->vertIdx[1];
+		vIDs[2] = poly->vertIdx[2];
+		vIDs[3] = poly->vertIdx[3];
+		
+		//Load vertices
+		for(int l = 0; l < 4; l++)
+		{
+		verts[l][X] = vList[vIDs[l]].point[X];
+		verts[l][Y] = vList[vIDs[l]].point[Y];
+		verts[l][Z] = vList[vIDs[l]].point[Z];
+		//Add up center
+		center[X] += verts[l][X];
+		center[Y] += verts[l][Y];
+		center[Z] += verts[l][Z];
+		}
+		//Get center
+		center[X] = center[X] / 4.0;
+		center[Y] = center[Y] / 4.0;
+		center[Z] = center[Z] / 4.0;	
+		//Center vertices to themselves
+		for(int h = 0; h < 4; h++)
+		{
+		verts[h][X] -= center[X];
+		verts[h][Y] -= center[Y];
+		verts[h][Z] -= center[Z];
+		fnormalize(verts[h]);
+		}
+		
+		/*
+		OPERATING THEORY
+		
+		You're putting into this loop soup for a polygon.
+		It is a properly facing order of vertices, in terms of its normal and facing towards the near plane,
+		but the direction the texture will draw is random.
+		
+		You want to force the textures to all draw with a particular visual orientation.
+		To accomplish this, you first have to re-order the soup so vertice 0 of the polygon is in a known visual location.
+		We will target "on the left" as the orientation of vertice 0.
+		
+		In theoretical terms, this is based on a screenspace transformation of the vertices in a given orientation.
+		Our orientation screenspace Y being as close to the texture's Y axis as we can get it.
+		But we will use a shortcut!
+		
+		The polygon's normal can be used to find out which axis the polygon most faces.
+		The axis the polygon most faces is the axis we want to align it to.
+		We also want to bias two axis. If we equally treat all three,
+		the dominant axis (Y) will interfere with the alignment of the others on steep slopes.
+		
+		Take this alignment, for example:
+		
+				y-
+		
+			z+		1
+			 0		
+		x+		O		x-
+					2
+				3	z-
+		
+				y+
+		
+		That's probably not a good graphic, but 0 and 3 are supposed to be equially distant from origin in Z,
+		but also have a large gap in Y and X. 1 and 2 don't vary much in X, but vary a lot in Y and Z.
+		It's an ambiguous shape: It could align Y, or X.
+		We would prefer X unless it is supremely dominant in Y to the point where no other axis is useful.
+		
+		The shortcut, then, is that the dominant axis of a normal is the axis in which is decimated when forcing the orientation.
+		If it is dominant Z, the Z value of the vertices is not useful. 
+		However, we do need to know if it is dominant in -Z or +Z.
+		This is because looking at +Z puts X+ on the left. Looking at -Z puts X+ on the right.
+		When we want to put vertice 0 "on the left", this is important.
+		So if the normal's dominant axis is + or -, that determines if we want a positive second axis or a negative second axis.
+		
+		The sorting axis is never Y because Y is the overall dominant axis.
+		The Y bias will be the same between X+ and Z+. When you let the dominant axis dominate the sorting,
+		you get sorting relative to views from the dominant axis, which is ambiguous when viewing from X or Z projections.
+		
+		However, there are edge-cases where the dominant axis must be consulted wherein the shape of the polygon
+		is ambiguous due to overlaps of vertice 1, 3, or 0 on the Y axis.
+		
+		When we know where vertice 0 is, we can either leave that as the orientation..
+		or permutate the polygon a couple more times to get the desired orientation.
+		
+		*/
+		
+			if(fabs(poly->normal[Y]) > 64000 && poly->normal[Y] > 0)
+			{
 
-        //polygon
-        writeUint16(file, startPol);
-        startPol += m->nbPolygon;
-        writeUint16(file, startPol);
+				if(verts[0][X] < 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, false);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+				} else if(verts[0][X] > 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, true);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				}
+				
+				
+			} else if(fabs(poly->normal[Y]) > 64000 && poly->normal[Y] < 0){
 
-        //Light data, not precalculated, might not even be used
-        writeUint16(file, 0);
-        writeUint16(file, 0);
-    }
+				if(verts[0][X] < 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, false);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				} else if(verts[0][X] > 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, true);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+				}
+				
+		} else if(fabs(poly->normal[X]) >= fabs(poly->normal[Z]) && fabs(poly->normal[Y]) < fabs(poly->normal[X]))
+		{
+			if(poly->normal[X] >= 0)
+			{
 
-    //Zpoints
-    for (unsigned int i=0; i<aModel->nbModels; i++){
-        model_t * m = &aModel->model[i];
+				if(verts[0][Z] < 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 2, false);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+				} else if(verts[0][Z] > 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 2, true);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				}
+				
+				////////////////////////////////////////////
+				//Post-mutation of ambiguous polygonm shapes
+				////////////////////////////////////////////
+				if(verts[2][Y] >= verts[0][Y])
+				{
+					//
+					permutate(verts, vIDs);
+				} else if(verts[2][Y] >= verts[1][Y])
+				{
+					//
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				} else if(verts[1][Y] < verts[3][Y] && verts[1][Y] < verts[0][Y])
+				{
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					//
+				}
+				////////////////////////////////////////////
+				/*
+				so far..	1y < 03y
+							2y < 01y
+						y-
+					   2			
+					   1
+				z-		 03		z+
+						y+
+				3 = 0 or 3 ~ 0 or 3 != 0 or 3 !~ 0, it doesn't matter.
+				This particular odd solution is documented because it's not intuitive.
+				*/
+			
+			} else {
+				if(verts[0][Z] < 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 2, false);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				} else if(verts[0][Z] > 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 2, true);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+				}
+				
+				////////////////////////////////////////////
+				//Post-mutation of ambiguous polygonm shapes
+				////////////////////////////////////////////
+				if(verts[2][Y] > verts[0][Y])
+				{
+					//
+					permutate(verts, vIDs);
+				} else if(verts[2][Y] > verts[1][Y])
+				{
+					//
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				} else if(verts[1][Y] < verts[3][Y] && verts[1][Y] < verts[0][Y])
+				{
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					//
+				}
+				////////////////////////////////////////////
+	
+			}
+		} else {
+			if(poly->normal[Z] >= 0)
+			{
+					
+				if(verts[0][X] < 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, false);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				} else if(verts[0][X] > 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, true);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+				}
+				
+				////////////////////////////////////////////
+				//Post-mutation of ambiguous polygonm shapes
+				////////////////////////////////////////////
+				if(verts[2][Y] >= verts[0][Y])
+				{
+					permutate(verts, vIDs);
+					//
+				} else if(verts[2][Y] >= verts[1][Y])
+				{
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					//
+				} else if(verts[1][Y] < verts[3][Y] && verts[1][Y] < verts[0][Y])
+				{
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					//
+				}
+				////////////////////////////////////////////
+					
+			} else {
+					
+				if(verts[0][X] < 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, false);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+				} else if(verts[0][X] > 0)
+				{
+					//
+					rotate_by_rule(verts, vIDs, 0, true);
+					//Pre-mutation to decided alignment 
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+				}
+				
+				////////////////////////////////////////////
+				//Post-mutation of ambiguous polygonm shapes
+				////////////////////////////////////////////
+				if(verts[2][Y] >= verts[0][Y])
+				{
+					permutate(verts, vIDs);
+					//
+				} else if(verts[2][Y] >= verts[1][Y])
+				{
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					//
+				} else if(verts[1][Y] < verts[3][Y] && verts[1][Y] < verts[0][Y])
+				{
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					permutate(verts, vIDs);
+					//
+				}
+				////////////////////////////////////////////
 
-        //points
-        for (unsigned int ii=0; ii<m->nbPoint; ii++) {
-            for (unsigned int j=0; j<3; j++) {
-                writeSint16(file, toFIXED8(m->pntbl[ii].point[j]));
-            }
-            //Get color for now, to be changed with a cool precalculated table instead
-            writeUint16(file, getColor(m->pntbl[ii].color));
-        }
-    }
-
-    startPt=0;
-    for (unsigned int i=0; i<aModel->nbModels; i++) {
-        model_t * m = &aModel->model[i];
-        for (unsigned int ii=0; ii<m->nbPolygon; ii++){
-                polygon_t * pol = &m->pltbl[ii];
-            for (unsigned int j=0; j<4; j++){
-                uint16_t buf = pol->vertIdx[j]+startPt;
-                file->write((char*)&buf, sizeof(uint8_t));
-            }
-            texture_t * t = &aModel->texture[pol->texture];
-            writeUint16(file, t->textureId);
-            writeUint16(file, (t->SGL_ATTR.dir&0x0FFF)|((t->SGL_ATTR.sorting&3)<<12)
-                        | ((t->SGL_ATTR.flag&1)<<14));
-            writeUint16(file, t->SGL_ATTR.atrb|CL_Gouraud);
-            writeUint16(file, t->SGL_ATTR.colno);
-        }
-        startPt+=m->nbPoint;
-
-    }
-
-
+			}
+		} 
+		
+		//Cleanup
+		center[X] = 0;
+		center[Y] = 0;
+		center[Z] = 0;
+		//Final alignment?
+		//This is because this stuff was demo'd on Saturn with unflipped flipped textures.
+		//Remember, TGAs start with the origin at the bottom left.
+		//In this program, we unflip the textures (so they are read in as top-left origin).
+		permutate(verts, vIDs);
+		permutate(verts, vIDs);
+		//Write vertice IDs
+			poly->vertIdx[0] = vIDs[0];
+			poly->vertIdx[1] = vIDs[1];
+			poly->vertIdx[2] = vIDs[2];
+			poly->vertIdx[3] = vIDs[3];
 }
 
 /*****
@@ -183,12 +517,12 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 {
     for (unsigned int i=0; i<aModel->nbModels; i++){
         //PDATA, including buffers for the pointers
-        writeUint32(file, 0);
-        writeUint32(file, aModel->model[i].nbPoint);
-        writeUint32(file, 0);
-        writeUint32(file, aModel->model[i].nbPolygon);
-        writeUint32(file, 0);
-        writeUint32(file, 0);//VECTOR TABLE POINTER
+        writeUint32(file, 0); //Empty 4-byte area for the PNTBL pointer [verts]
+        writeUint32(file, aModel->model[i].nbPoint); //# of point
+        writeUint32(file, 0); //Empty 4-byte area for the PLTBL pointer [polys]
+        writeUint32(file, aModel->model[i].nbPolygon); //# of poly
+		writeUint32(file, 0); //Empty 4-byte area for the ATTBL pointer [attributes]
+       //Written type is PDATA, there are no per-vertice normals.
 
         //POINT, 12 bytes each
         for (unsigned int ii=0; ii<aModel->model[i].nbPoint; ii++) {
@@ -196,13 +530,19 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
                 writeSint32(file,toFIXED(aModel->model[i].pntbl[ii].point[j]));
             }
         }
+		
         //POLYGON, 12 bytes for normals and 8 bytes for vertices
         for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) {
+		
+			//spesh[ii] = 0;
+			
+			poly_face_sort(&aModel->model[i].pltbl[ii], &aModel->model[i].pntbl[0]);
+
             //Normals
             for (unsigned int j=0; j<3; j++) {
                 writeSint32(file, toFIXED(aModel->model[i].pltbl[ii].normal[j]));
             }
-            //Vertices
+            //Vertices //Vertice index, e.g. a polygon points to vertices 16, 21, 17, 20.
             for (unsigned int j=0; j<4; j++) {
                 writeUint16(file, aModel->model[i].pltbl[ii].vertIdx[j]);
             }
@@ -218,83 +558,31 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
             writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.gstb);
             writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.dir);
         }
-        //VECTOR NORMALS
-        for (unsigned int ii=0; ii<aModel->model[i].nbPoint; ii++) //VECTOR : 12 bytes each
-        {
-            for (unsigned int j=0; j<3; j++)
-            {
-                writeSint32(file, toFIXED(aModel->model[i].pntbl[ii].normal[j]));
-            }
-        }
+
     }
 }
 
-unsigned short convert_to_4bpp(unsigned short a, unsigned short b){    return (((a&0xff)<<4) | (b));}
 void WRITE_TEXTURES(ofstream * file, animated_model_t * aModel)
 {
     cout << "Writing the textures to binary file...\n\n";
-    uint16_t buf16;
-    uint32_t bufPtr=0;
+	int tSize;
     texture_t * t;
     for (unsigned short i=0; i<aModel->nbTextures; i++)
     {
         t=&aModel->texture[i];
-        writeUint16(file, t->width);
-        writeUint16(file, t->height);
-        writeUint16(file, COL_16);
-        writeUint16(file, 16);
-        writeUint32(file, 0); //Just a pointer
-
-        for (unsigned short ii=0; ii< (t->width * t->height);)
-        {
-            uint8_t buf = 0;
-            buf =  (uint8_t)(convert_to_4bpp(t->pixel[ii].palette_idx, t->pixel[ii+1].palette_idx)); //(((t->pixel[ii].palette_idx &0x0F)<<4) |  (t->pixel[ii+1].palette_idx&0x0F));
-            file->write((char*)&buf, sizeof(uint8_t));
-            ii+=2;
-        }
-
+		writeUint16(file, 0x7F7F);
+		writeU8(file, t->height);
+		writeU8(file, t->width);
+		tSize = t->height * t->width;
+		for(int k = 0; k < tSize; k++)
+		{
+			writeU8(file, t->pixel[k].a);
+		}
     }
-    for (unsigned short i=0; i<aModel->nbTextures; i++)
-    {
-        t=&aModel->texture[i];
-        for (unsigned int ii=0; ii<16; ii++)
-        {
-           writeUint16(file, t->clut[ii]);
-        }
-    }
-
-
 
     cout << "Writing the textures to text file (for debugging)...\n\n";
     ofstream tFile("OUT/TEXTURES.TXT", ios::out);
     if (!tFile.is_open()) {cout << "ERROR WRITING TEXT FILE TEXTURE DATA...\n"; return;}
-
-    tFile << "//Text version of the texture data. FOR TESTING/DEBUGGING ONLY! USE THE BINARY FORMAT INSTEAD!\n\n";
-    tFile << "//Uint32 nbTextures = " << aModel->nbTextures << ";\n";
-    tFile << "\nstruct {\n Uint16 w;\nUint16 h;\nUint16 * pixData;\n} textData;\n\n";
-
-    tFile << "textData testTextures[" << aModel->nbTextures << "];\n\n";
-
-
-    for (unsigned short i=0; i<aModel->nbTextures; i++)
-    {
-        t=&aModel->texture[i];
-        tFile << "\n//Texture " << i << "\n";
-        tFile << "//Width = " << t->width << ", height = " << t->height << "\n";
-        tFile << "Uint16 textData TEXTURE" << i << " = {\n";
-        tFile << t->width << ", " << t->height << ", \n{\n";
-        for (unsigned int ii=0; ii<t->height*t->width; ii+=8)
-        {
-            for (unsigned int j=0; j<8; j++)
-            {
-                tFile << "C_RGB(" << (int)(t->pixel[ii+j].rgb&0x1F) << ", " <<
-                (int)((t->pixel[ii+j].rgb>>5)&0x1F)  << ", " <<
-                (int)((t->pixel[ii+j].rgb>>10)&0x1F) << "), ";
-            }
-            tFile << "\n";
-        }
-        tFile << "}\n};\n\n";
-    }
 
 }
 
@@ -331,6 +619,10 @@ void writeAnim(ofstream * file, animated_model_t * aModel, unsigned int FrameID)
     file->write((char*)&bSint32, sizeof(int32_t));
     unsigned int tot_vertices=0, tot_normals=0;
 
+/********************************
+WRITES COMPRESSED VERTICES AS 8.8 FIXED-POINT FORMAT (2-bytes)
+[There's nothing special about these except the way they are written]
+*********************************/
     for (unsigned int i=0; i< aModel->nbModels; i++ ) {
         for (unsigned int ii=0; ii<(aModel->model[i].nbPoint); ii++) {
             for (unsigned int j=0; j<3; j++) {
@@ -343,9 +635,11 @@ void writeAnim(ofstream * file, animated_model_t * aModel, unsigned int FrameID)
         writeSint16(file, 0);
         tot_vertices++;
     }
+//
 
-    if (!USE_SGL) return;
-
+/********************************
+WRITES COMPRESSED NORMALS AS 1-BYTE ANORM.H ENTRY
+*********************************/
     for (unsigned int i=0; i< aModel->nbModels; i++ ) {
         for (unsigned int ii=0; ii<(aModel->model[i].nbPolygon); ii++) {
             bUint8 = (uint8_t)normalLookUp((float*)&aModel->model[i].pltbl[ii].normal[X]); //baseModel->animation[FrameID].cNorm[tot_normals]=(uint8_t)(normalLookUp(kfModel->pol[i].pltbl[ii].norm));
@@ -361,23 +655,28 @@ void writeAnim(ofstream * file, animated_model_t * aModel, unsigned int FrameID)
 
 /********************************
 * WIP : Writes data to custom binary format
+
+WRITTEN ORDER:
+
+FIRST: HEADER
+SECOND: PDATA
+THIRD: ANIMATION DATA, IF PRESENT
+FINALLY: TEXTURES
 *********************************/
 void write_model_binary(ofstream * file, animated_model_t * aModel)
 {
 
 
     WRITE_MDATA(file, aModel);
-    WRITE_TEXTURES(file, aModel);
-    if (USE_SGL)
-        WRITE_SGL_PDATA(file, aModel);
-    else
-        WRITE_ZPDATA(file, aModel);
+	WRITE_SGL_PDATA(file, aModel);
 
+	//Making duplicate base data array of the model's vertices data
     vertex_t * v[aModel->nbModels];
     for (unsigned int i=0; i<aModel->nbModels; i++)
+	{
         v[i] = aModel->model[i].pntbl;
-
-
+	}
+	//Writing Animation data
     for (unsigned int i=0; i<aModel->nbFrames; i++)
     {
         uint32_t v_count = 0;
@@ -388,11 +687,13 @@ void write_model_binary(ofstream * file, animated_model_t * aModel)
             recalculateNormals(&aModel->model[ii]);
         }
 
-        //compareAnimationData(model, &animModel, i);
         writeAnim(file, aModel, i);
         for (unsigned int i=0; i<aModel->nbModels; i++)
         aModel->model[i].pntbl = v[i];
     }
+	
+    WRITE_TEXTURES(file, aModel);
+	
 }
 
 

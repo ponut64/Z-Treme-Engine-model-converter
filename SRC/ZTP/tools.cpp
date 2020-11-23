@@ -8,44 +8,10 @@ int32_t          swap_endian_sint(   int32_t value)   { return ((((value) & 0xff
 
 float dotProduct(float * vct1, float * vct2){return ((vct1[X]*vct2[X])+(vct1[Y]*vct2[Y])+(vct1[Z]*vct2[Z]));}
 
-/*
-int AddPoint(vPDATA * newMesh, POINT CurrentPoint, VECTOR CurNormVect)
+void writeU8(ofstream * file, unsigned char data)
 {
-    for (unsigned int i=0; i< newMesh->nbPoint; i++)
-    {
-        if ((newMesh->pntbl[i][0] == CurrentPoint[0])&& (newMesh->pntbl[i][1]== CurrentPoint[1]) && (newMesh->pntbl[i][2]== CurrentPoint[2]))
-            {
-                return i;
-            }
-    }
-
-    newMesh->pntbl[newMesh->nbPoint][X] = CurrentPoint[0];
-    newMesh->pntbl[newMesh->nbPoint][Y] = CurrentPoint[1];
-    newMesh->pntbl[newMesh->nbPoint][Z] = CurrentPoint[2];
-    newMesh->vntbl[newMesh->nbPoint][X] = CurNormVect[X];
-    newMesh->vntbl[newMesh->nbPoint][Y] = CurNormVect[Y];
-    newMesh->vntbl[newMesh->nbPoint][Z] = CurNormVect[Z];
-    newMesh->nbPoint ++;
-    return (newMesh->nbPoint - 1);
-}*/
-
-
-void calculateBoundingBox(float * boxMin, float * boxMax, vertex_t * vertexArray, unsigned int totalVertices)
-{
-    vertex_t * v = vertexArray;
-    for (unsigned int i=0; i<totalVertices; i++)
-    {
-        for (unsigned int ii = 0; ii<3; ii++)
-        {
-            if (v->point[ii] < boxMin[ii])
-                boxMin[ii]=v->point[ii];
-            else if (v->point[ii] > boxMax[ii])
-                boxMax[ii]=v->point[ii];
-        }
-        v++;
-    }
+    file->write((char*)&data, sizeof(unsigned char));
 }
-
 
 void writeUint16(ofstream * file, uint16_t data)
 {

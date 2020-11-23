@@ -4,13 +4,16 @@
 
 using namespace std;
 #include <windows.h>
-#include <gl/gl.h>
-#include <GL/glu.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <math.h>
+#include <cmath>
+#include <algorithm>
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
 
 #include "ZTE/saturnDef.h"
 
@@ -43,38 +46,6 @@ enum
 
 typedef     float   MATRIX[16];
 typedef     float	VECTOR[XYZ] ;
-
-/*
-enum
-{
-    SORT_MIN = 0,
-    SORT_CEN = 1,
-    SORT_MAX = 2,
-    SORT_BFR = 3
-};*/
-
-enum
-{
-    IDLE_ANIM       = 0,
-    WALK_ANIM       = 1,
-    RUN_ANIM        = 2,
-    ATTACK_ANIM     = 3,
-    ALT_ATT_ANIM    = 4,
-    MELEE_ANIM      = 5,
-    JUMP_ANIM       = 6,
-    FALL_ANIM       = 7,
-    CRAWL_ANIM      = 8,
-    HURT_ANIM       = 9,
-    DYING_ANIM      = 10,
-    TAUNT_ANIM      = 11,
-};
-
-typedef struct
-{
-	bool bPressed;
-	bool bReleased;
-	bool bHeld;
-} sKeyState;
 
 typedef struct
 {
@@ -111,23 +82,13 @@ typedef struct
     unsigned int nbPolygon;
     vertex_t * pntbl;
     polygon_t * pltbl;
-    float           BoxMin[3]; //Bounding box min point for the submodel, can be useful if you are a maniac who wants to add things such as headshots, dismemberment and pretty kid-friendly good stuff
-    float           BoxMax[3]; //Bounding box max point for the submodel, can be useful if you are a maniac who wants to add things such as headshots, dismemberment and pretty kid-friendly good stuff
 } model_t;
 
 typedef struct
 {
-    vertex_t * cVert;  //Uncompressed for now
-    float * cNorm[3]; //Will probably stay unused
+    vertex_t * cVert;  //Uncompressed for now // ???
+    float * cNorm[3]; //Will probably stay unused // ???
 }key_frame_t;
-
-enum
-{
-    TEX_IS_2D = (1<<0),
-    TEX_NO_GOURAUD = (1<<1),
-    TEX_USE_TRANSPARENCY = (1<<2),
-};
-
 
 typedef struct {
     uint8_t	     flag ;
@@ -180,36 +141,13 @@ typedef struct
     uint16_t endFrm;
 } animationControl_t;
 
-struct player_t
-{
-    float               POSITION[3];
-    float               NEXT_POSITION[3];
-    float               ROTATION[3]; //16 bits on Saturn, so aligned with the next 2 chars
-    int8_t              PLAYER_ID;
-    int8_t              OWNED_WEAPONS;
-    float               SPEED[3];
-    float               MOVEMENT_SPEED;
-    float               LATERAL_SPEED;
-    int32_t             LEAF;  //Short is way enough...
-    uint16_t            ANIM[2];
-    int8_t              AMMO[8];
-    uint16_t            STATUS;
-    uint16_t            LAST_INPUT;
-    int8_t              IS_FIRING;
-    int8_t              WEAPON;
-    animationControl_t  ANIMCTRL;
-};
-
 uint16_t        swap_endian_ushort(uint16_t value);
 int16_t         swap_endian_sshort( int16_t value);
 uint32_t        swap_endian_uint(uint32_t value);
 int32_t         swap_endian_sint( int32_t value);
 
-
-
-#include "ZTE/MATH/matrix.h"
-
 /**Functions**/
 float dotProduct(float * vct1, float * vct2);
+animated_model_t * loading(void);
 
 #endif // COMMON_H

@@ -1,22 +1,4 @@
 # depslib dependency file v1.0
-1561906302 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\opengl\init.cpp
-	"../COMMON.H"
-
-1562605940 d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\common.h
-	<windows.h>
-	<gl/gl.h>
-	<GL/glu.h>
-	<iostream>
-	<fstream>
-	<string>
-	<sstream>
-	<math.h>
-	"ZTE/saturnDef.h"
-	"ZTE/MATH/matrix.h"
-
-1561906399 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\opengl\render.cpp
-	"../COMMON.H"
-
 1563117060 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\main.cpp
 	"SRC/COMMON.H"
 
@@ -30,9 +12,6 @@
 	"../COMMON.H"
 
 1561167956 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\ztp\vector.cpp
-	"../COMMON.H"
-
-1562085000 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\ztp\controls.cpp
 	"../COMMON.H"
 
 1561559526 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\ztp\light.cpp
@@ -49,21 +28,45 @@
 1561765920 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\ztp\matrix.cpp
 	"../COMMON.H"
 
-1561765463 d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\zte\math\matrix.h
-
-1561775345 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\zte\math\matrix.cpp
-	"../../COMMON.H"
-
-1561906292 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\zte\render\render.cpp
-	"../../COMMON.H"
-
-1561775703 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\zte\render\zsort.cpp
-	"../../COMMON.H"
-
 1562079977 d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\zte\saturndef.h
 
-1561776252 source:d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\zte\system\init.cpp
-	"../../COMMON.H"
-
 1528497887 d:\onedrive\max\onedrive\documents\saturn\model_converter\new_version\ztp_compiler\src\ztp\anorms.h
+
+1575335653 source:c:\users\ponylover\desktop\conv\src\ztp\writeztptext.cpp
+
+1579252443 source:c:\users\ponylover\desktop\conv\main.cpp
+	"SRC/COMMON.H"
+
+1580549956 c:\users\ponylover\desktop\conv\src\common.h
+	<windows.h>
+	<iostream>
+	<fstream>
+	<string>
+	<sstream>
+	<cmath>
+	<algorithm>
+	"ZTE/saturnDef.h"
+
+1575335653 c:\users\ponylover\desktop\conv\src\zte\saturndef.h
+
+1579252249 source:c:\users\ponylover\desktop\conv\src\ztp\light.cpp
+	"../COMMON.H"
+
+1582122515 source:c:\users\ponylover\desktop\conv\src\ztp\load.cpp
+	"../COMMON.H"
+
+1582122451 source:c:\users\ponylover\desktop\conv\src\ztp\textures.cpp
+	"../COMMON.H"
+
+1580102925 source:c:\users\ponylover\desktop\conv\src\ztp\tools.cpp
+	"../COMMON.H"
+
+1575335653 source:c:\users\ponylover\desktop\conv\src\ztp\vector.cpp
+	"../COMMON.H"
+
+1581418231 source:c:\users\ponylover\desktop\conv\src\ztp\writeztp.cpp
+	"../COMMON.H"
+	"anorms.h"
+
+1575335653 c:\users\ponylover\desktop\conv\src\ztp\anorms.h
 
