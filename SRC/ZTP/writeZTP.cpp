@@ -276,7 +276,7 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 		
 		*/
 		
-			if(fabs(poly->normal[Y]) > 64000 && poly->normal[Y] > 0)
+			if(fabs(poly->normal[Y]) > 0.97 && poly->normal[Y] > 0)
 			{
 
 				if(verts[0][X] < 0)
@@ -296,7 +296,7 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				}
 				
 				
-			} else if(fabs(poly->normal[Y]) > 64000 && poly->normal[Y] < 0){
+			} else if(fabs(poly->normal[Y]) > 0.97 && poly->normal[Y] < 0){
 
 				if(verts[0][X] < 0)
 				{
