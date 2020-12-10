@@ -222,18 +222,31 @@ int ReadTGAFile (string folder, texture_t * texture)
 {
 	
     string name;
+	string newname;
     TGA_HEADER header;
 	int size = 0;
 	
     cout << "\nAttempting to read TGA texture file...\n";
 
-    name =  folder + texture->name + ".TGA"; //Temporary : Will break under several conditions
+        std::size_t findDual = texture->name.find("DUAL_");  //Dual-planes
+        std::size_t findMesh = texture->name.find("MESH_");  //Mesh polys
+        std::size_t findMedu = texture->name.find("MEDU_");  //Mesh + dual plane polys
+		
+		if(findDual == 0 || findMesh == 0 || findMedu == 0) //If a preprocessor is found, remove the preprocessor from the file name
+		{
+	newname = texture->name;
+	newname.erase(newname.begin(), newname.begin()+5);
+    name =  folder + newname + ".TGA"; //Temporary : Will break under several conditions
+		} else {
+	newname = texture->name;
+    name =  folder + newname + ".TGA"; //Temporary : Will break under several conditions
+		}
 
     ifstream ibinfile(name.c_str(), ios::in | ios::binary | ios::ate);
 
     if (!ibinfile.is_open())
         {
-            cout << "ERROR : COULDN'T LOAD FILE " << texture->name.c_str() << ".TGA, creating a bad texture \n";
+            cout << "ERROR : COULDN'T LOAD FILE " << newname.c_str() << ".TGA, creating a bad texture \n";
             createFakeTexture(texture);
             return -1;
         }
@@ -244,7 +257,7 @@ int ReadTGAFile (string folder, texture_t * texture)
     ibinfile.close();
 
     ReadTGAHeader(tgaDataArea, &header);
-        cout << "Texture " << texture->name << ", size : " << header.width << "x" << header.height << ", pixel depth : " << header.bitsperpixel << ", RLE = " << header.datatypecode << "\n";
+        cout << "Texture " << newname << ", size : " << header.width << "x" << header.height << ", pixel depth : " << header.bitsperpixel << ", RLE = " << header.datatypecode << "\n";
 
     if (header.datatypecode == 9 || header.datatypecode == 10) {
             createFakeTexture(texture);

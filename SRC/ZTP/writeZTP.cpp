@@ -18,14 +18,14 @@ VECTOR normLUT[] =
 /*
 Model data header
 
-0 byte: # of meshes
-2 byte: # of textures
-4 byte: total size of PDATA + compressed verts [rather, offset to end of]
-8 byte: total size of textures [rather, offset to end of]
-12 byte: # of keyframes
-14 byte: " " framerate " "
-16 byte: nothing
-19 byte: blank
+0-1 byte: # of meshes
+2-3 byte: # of textures
+4-7 byte: total size of PDATA + compressed verts [rather, offset to end of]
+8-11 byte: total size of textures [rather, offset to end of]
+12-13 byte: # of keyframes
+14-15 byte: x_radius
+16-17 byte: y_radius
+18-19 byte: z_radius
 */
 void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 {
@@ -51,13 +51,15 @@ void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
     countSize=0;
 
     cout << "\n";
+	cout << "X radius: " << aModel->x_radius << "\n";
+	cout << "Y radius: " << aModel->y_radius << "\n";
+	cout << "Z radius: " << aModel->z_radius << "\n";
 
     //Animation : Updated 2018/05/31
     writeUint16(file, aModel->nbFrames);
-    writeUint16(file, aModel->framerate);
-
-    writeUint32(file, 0x00000000);
-
+    writeUint16(file, aModel->x_radius);
+    writeUint16(file, aModel->y_radius);
+    writeUint16(file, aModel->z_radius);
 }
 
 void	crossf(float vector1[3], float vector2[3], float output[3])

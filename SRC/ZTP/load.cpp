@@ -55,9 +55,9 @@ int sort_faces(string inString, model_t * t_PDATA, polygon_t * bufPol, int index
 
 /****
 *Main function to read the OBJ file
-*Param : Obj file, upscale value (integer), your model data (_MOD_DATA) and boolean if it's a base model
+*Param : Obj file, your model data (_MOD_DATA) and boolean if it's a base model
 *****/
-bool load_OBJ_to_mesh(ifstream *file, float * scalefactor, animated_model_t * aModel, int keyFrameID)
+bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 {
     string line;
     int pointer = 0;
@@ -69,6 +69,13 @@ bool load_OBJ_to_mesh(ifstream *file, float * scalefactor, animated_model_t * aM
     file->seekg(pointer, ios::beg);
 
     model_t * o_PDATA;
+
+	if (keyFrameID==-1)
+	{
+		aModel->x_radius = 0;
+		aModel->y_radius = 0;
+		aModel->z_radius = 0;
+	}
 
     while(!file->eof())
     {
@@ -100,16 +107,20 @@ bool load_OBJ_to_mesh(ifstream *file, float * scalefactor, animated_model_t * aM
 
             if (keyFrameID==-1)
             {
-                o_PDATA->pntbl[o_PDATA->nbPoint].point[X] = fx * scalefactor[X];
-                o_PDATA->pntbl[o_PDATA->nbPoint].point[Y] = fy * scalefactor[Y];
-                o_PDATA->pntbl[o_PDATA->nbPoint].point[Z] = fz * scalefactor[Z];
+                o_PDATA->pntbl[o_PDATA->nbPoint].point[X] = fx;
+                o_PDATA->pntbl[o_PDATA->nbPoint].point[Y] = fy;
+                o_PDATA->pntbl[o_PDATA->nbPoint].point[Z] = fz;
                 o_PDATA->nbPoint++;
+				
+				aModel->x_radius = ((unsigned short)(fabs(fx)) > aModel->x_radius) ? fabs(fx) : aModel->x_radius;
+				aModel->y_radius = ((unsigned short)(fabs(fy)) > aModel->y_radius) ? fabs(fy) : aModel->y_radius;
+				aModel->z_radius = ((unsigned short)(fabs(fz)) > aModel->z_radius) ? fabs(fz) : aModel->z_radius;
             }
             else
             {
-                aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[X] = fx * scalefactor[X];
-                aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[Y] = fy * scalefactor[Y];
-                aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[Z] = fz * scalefactor[Z];
+                aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[X] = fx;
+                aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[Y] = fy;
+                aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[Z] = fz;
                 bufTotalVerts++;
             }
 
@@ -221,7 +232,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		cout << "\n " << numMedu << " mesh & dual plane textures \n";
 }
 
-void LoadOBJ(string inFolder, string fileIn, float * scalefactor, animated_model_t * aModel)
+void LoadOBJ(string inFolder, string fileIn, animated_model_t * aModel)
 {
     cout << "\nNow loading : " << fileIn << "\n";
     string fileInName = inFolder + fileIn + ".obj";
@@ -234,7 +245,7 @@ void LoadOBJ(string inFolder, string fileIn, float * scalefactor, animated_model
     aModel->texture = (texture_t*)calloc(256,sizeof(texture_t));
 
     cout << "Preparing to open OBJ file...\n";
-    if (load_OBJ_to_mesh(&file, scalefactor, aModel, -1)) {cout << "\nSuccess : " << fileIn << " loaded...\n";}
+    if (load_OBJ_to_mesh(&file, aModel, -1)) {cout << "\nSuccess : " << fileIn << " loaded...\n";}
     else {cout << "\nERROR : Couldn't load Obj\n"; return;}
     file.close();
 
@@ -260,7 +271,7 @@ void LoadOBJ(string inFolder, string fileIn, float * scalefactor, animated_model
         cout << animName << "\n\n****************\n";
         ifstream animFile(animName, ios::in | ios::ate);
         if (!animFile.is_open()) {cout << "ERROR READING OBJ FILE\n"; aModel->nbFrames=i; break;}
-        if (load_OBJ_to_mesh(&animFile, scalefactor, aModel, i)) {cout << "\nKeyFrame No. " << i << " loaded...\n";}
+        if (load_OBJ_to_mesh(&animFile, aModel, i)) {cout << "\nKeyFrame No. " << i << " loaded...\n";}
         else {cout << "\nERROR : Couldn't load keyframe\n"; break;}
         animFile.close();
     }
@@ -284,7 +295,6 @@ void LoadOBJ(string inFolder, string fileIn, float * scalefactor, animated_model
 
 animated_model_t * loading(void)
 {
-    float scaleFactor[XYZ];
 
     string path;
 
@@ -298,17 +308,6 @@ animated_model_t * loading(void)
     cout <<"   Example : for 6 keyframes to interpolate your animations, enter 6.\n   0 for no animation.\n\n";
     cout << "ENTER TOTAL KEYFRAMES : ";
     cin >> newModel->nbFrames;
-
-    if (newModel->nbFrames == 0)
-    {
-        newModel->framerate=0;
-    }
-    else
-    {
-        newModel->framerate=0;
-    }
-
-    scaleFactor[X]=scaleFactor[Y]=scaleFactor[Z] = 1;
 
     cout << "\n***STEP 2***";
     cout << "\n   You will now have to enter the folder's relative path\n   IMPORTANT : Don't forget to end it with a '/'.\n   Example : IN/TITLE/  and then press enter.\n\n";
@@ -327,7 +326,7 @@ animated_model_t * loading(void)
     ZeroMemory(newModel->model, sizeof(model_t) * 256);
     newModel->keyFrames = new key_frame_t[newModel->nbFrames];
     ZeroMemory(newModel->keyFrames, sizeof(key_frame_t) * newModel->nbFrames);
-    LoadOBJ(path, fileName, scaleFactor, newModel);
+    LoadOBJ(path, fileName, newModel);
 
     cout << "End of program. Enjoy!\n\n";
 

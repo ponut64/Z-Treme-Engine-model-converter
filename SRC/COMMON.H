@@ -118,17 +118,16 @@ typedef struct
 
 typedef struct
 {
-    unsigned int    framerate;
     unsigned int    nbFrames;
     unsigned int    nbTextures;
     unsigned int    nbModels;
     string          name;
-    uint8_t         keyFramesIdx[12][3]; //Sets the ranges for different animations : Start, end, and frames per seconds
     key_frame_t *   keyFrames;
     model_t *       model;
     texture_t *     texture;
-    float           BoxMin[3]; //Bounding box min point
-    float           BoxMax[3]; //Bounding box max point
+	unsigned short x_radius;
+	unsigned short y_radius;
+	unsigned short z_radius;
 } animated_model_t;
 
 typedef struct
