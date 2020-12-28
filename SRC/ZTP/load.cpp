@@ -1,5 +1,15 @@
 #include "../COMMON.H"
 
+    extern int ReadTGAFile (string folder, texture_t * texture);
+	extern int ReadPaletteFile (void);
+	
+	int		item_exception_vertices[64][4];
+	int		items[64];
+	int		item_number_package[64];
+	float	item_positions[64][XYZ];
+	int		number_of_items = 0;
+	int		number_of_unique_items = 0;
+
 int generate_texture_list(string inString, animated_model_t * model)
 {
     if (inString=="None") return -1;
@@ -21,6 +31,7 @@ int sort_faces(string inString, model_t * t_PDATA, polygon_t * bufPol, int index
             int i = 0;
             for (i=0; i<128; i++)
             {
+				//Find the first '/', then break from this loop.
                 if (inString[i]=='/') {i++; break;}
                 bufferChar[i]=inString[i];
             }
@@ -28,6 +39,7 @@ int sort_faces(string inString, model_t * t_PDATA, polygon_t * bufPol, int index
             int charPtr=0;            char bufferChar2[128]={};            f2 = "";
             for (i=i; i<128; i++)
             {
+				//Find the next '/' then break from this loop
                 if (inString[i]=='/') {i++; break;}
                 bufferChar2[charPtr]= inString[i];
                 charPtr++;
@@ -36,6 +48,7 @@ int sort_faces(string inString, model_t * t_PDATA, polygon_t * bufPol, int index
             charPtr=0; char bufferChar3[128]={}; f3 = "";
             for (i=i; i<128; i++)
             {
+				//Find the next '/' then break from this loop
                 if (inString[i]=='/') {i++; break;}
                 bufferChar3[charPtr]=inString[i];
                 charPtr++;
@@ -65,11 +78,17 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
     int bufTotalVerts = 0;
     int MeshPtr = -1;
 
+	int working_with_item = 0;
+
     if (!file->is_open()) return false;
     file->seekg(pointer, ios::beg);
 
     model_t * o_PDATA;
 
+	///////////////////////////////////////////
+	// Ponut64 Addition
+	// Zero-out model's radius on source model (keyframe -1)
+	///////////////////////////////////////////
 	if (keyFrameID==-1)
 	{
 		aModel->x_radius = 0;
@@ -112,6 +131,11 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
                 o_PDATA->pntbl[o_PDATA->nbPoint].point[Z] = fz;
                 o_PDATA->nbPoint++;
 				
+				///////////////////////////////////////////
+				// Ponut64 Addition
+				// Check if the point is larger than the previously largest number on any axis.
+				// If it is, write it as the radius.
+				///////////////////////////////////////////
 				aModel->x_radius = ((unsigned short)(fabs(fx)) > aModel->x_radius) ? fabs(fx) : aModel->x_radius;
 				aModel->y_radius = ((unsigned short)(fabs(fy)) > aModel->y_radius) ? fabs(fy) : aModel->y_radius;
 				aModel->z_radius = ((unsigned short)(fabs(fz)) > aModel->z_radius) ? fabs(fz) : aModel->z_radius;
@@ -137,14 +161,37 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
         }
         else if ((line[0]=='u' && line[1]=='s' && line[2]=='e' && line[3]=='m' && line[4]=='t' && line[5]=='l')&& (keyFrameID==-1)) //Yeah, I know we all got it after the 2 letters, but just in case some weird Obj format popup...
         {
-           // cout << aModel->nbTextures << "\n";
+			//cout << aModel->nbTextures << "\n";
             stringstream MtlSS(line);         string bufferStr;
             getline(MtlSS, bufferStr, ' ');
             string mtlName = {""};
             MtlSS >> mtlName;
+			std::size_t findItem = mtlName.find("ITEM_");
+			if(findItem != 0)
+			{
+			// Not an item data material. Process as a texture.
             textpointer=generate_texture_list(mtlName, aModel);
-
-        }
+			working_with_item = 0;
+			} else if(findItem == 0)
+			{
+			//////////////////////////////////////////////////////////////////////
+			//	Ponut64 Addition
+			//	This code is very spaghetti and somewhat challenging to crawl through...
+			//
+			//	This section checks if the material (in the object file) has a prefix of "ITEM_".
+			//	Note the OBJ format: It is plaintext, and a material definition precedes all polygons of that material.
+			//	If the prefix "ITEM_" is found, the text following the prefix is converted to integer (stoi).
+			//	This information is written to the item number package array, which lists the unique item numbers.
+			//	This material/texture is not stored in the texture list.
+			//////////////////////////////////////////////////////////////////////
+				mtlName.erase(mtlName.begin(), mtlName.begin()+5);
+				//Convert string to integer (stoi).
+				item_number_package[number_of_unique_items] = stoi(mtlName, 0);
+				number_of_unique_items++;
+				//We're working with an item now.
+				working_with_item = 1;
+			}
+		}
         else if ((line[0] == 'f' && line[1] == ' ')&& (keyFrameID==-1))
         {
             stringstream FaceSS(line);
@@ -160,9 +207,56 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
             sort_faces(p[1], o_PDATA, &bufPol, 2, bufTotalVerts);
             sort_faces(p[0], o_PDATA, &bufPol, 3, bufTotalVerts);
 
-            o_PDATA->pltbl[o_PDATA->nbPolygon]=bufPol;
-            o_PDATA->pltbl[o_PDATA->nbPolygon].texture = textpointer;
-            o_PDATA->nbPolygon++;
+			//////////////////////////////////////////////////////////////////////
+			//	Ponut64 Addition
+			//	This code is very spaghetti and somewhat challenging to crawl through...
+			//	I'm not making it any better.
+			//
+			//	Note the OBJ format: It is plaintext, and a material definition precedes all polygons of that material.
+			//	If the polygon in the OBJ followed an "ITEM_" material, we should have the item # stored.
+			//	Convert the polygon information into a single-point by averaging the position of all four points.
+			//	Then store the information from the item name as associated with this item's location.
+			//////////////////////////////////////////////////////////////////////
+			if(working_with_item == 1)
+			{
+				unsigned int ptv[4] = {
+					bufPol.vertIdx[0],
+					bufPol.vertIdx[1],
+					bufPol.vertIdx[2],
+					bufPol.vertIdx[3]
+				};
+				item_positions[number_of_items][X] =  (o_PDATA->pntbl[ptv[0]].point[X] +
+														o_PDATA->pntbl[ptv[1]].point[X] +
+														o_PDATA->pntbl[ptv[2]].point[X] +
+														o_PDATA->pntbl[ptv[3]].point[X]
+														) / 4.0;
+				item_positions[number_of_items][Y] =  (o_PDATA->pntbl[ptv[0]].point[Y] +
+														o_PDATA->pntbl[ptv[1]].point[Y] +
+														o_PDATA->pntbl[ptv[2]].point[Y] +
+														o_PDATA->pntbl[ptv[3]].point[Y]
+														) / 4.0;
+				item_positions[number_of_items][Z] =  (o_PDATA->pntbl[ptv[0]].point[Z] +
+														o_PDATA->pntbl[ptv[1]].point[Z] +
+														o_PDATA->pntbl[ptv[2]].point[Z] +
+														o_PDATA->pntbl[ptv[3]].point[Z]
+														) / 4.0;
+														
+				cout << "Created Item at Pos: \n";
+				cout << item_positions[number_of_items][X] << "\n ";
+				cout << item_positions[number_of_items][Y] << "\n ";
+				cout << item_positions[number_of_items][Z] << "\n ";
+														
+				item_exception_vertices[number_of_items][0] = ptv[0];
+				item_exception_vertices[number_of_items][1] = ptv[1];
+				item_exception_vertices[number_of_items][2] = ptv[2];
+				item_exception_vertices[number_of_items][3] = ptv[3];
+				items[number_of_items] = item_number_package[number_of_unique_items-1];
+				number_of_items++;
+			} else {
+				o_PDATA->pltbl[o_PDATA->nbPolygon]=bufPol;
+				o_PDATA->pltbl[o_PDATA->nbPolygon].texture = textpointer;
+				o_PDATA->nbPolygon++;
+			}
         }
         pointer++;
     }
@@ -199,9 +293,13 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
         t = &aModel->texture[i];
-        std::size_t findDual = t->name.find("DUAL_");  //Dual-planes
-        std::size_t findMesh = t->name.find("MESH_");  //Mesh polys
-        std::size_t findMedu = t->name.find("MEDU_");  //Mesh + dual plane polys
+	//////////////////////////////////////////////
+	// Ponut64 Addition
+	// Find the texture types based on the prefix of the name and generate the appropriate attbl for it.
+	//////////////////////////////////////////////
+        std::size_t findDual = t->name.find("DUAL_");	//Dual-planes
+        std::size_t findMesh = t->name.find("MESH_");	//Mesh polys
+        std::size_t findMedu = t->name.find("MEDU_");	//Mesh + dual plane polys
 	
 		if(findDual == 0) //If DUAL is found at the start
 		{
@@ -226,10 +324,13 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		
     }
 	
-		cout << "\n " << numNormal << " normal textures \n";
-		cout << "\n " << numMesh << " mesh textures \n";
-		cout << "\n " << numDual << " dual plane textures \n";
+		cout << "\n " << numNormal << " normal textures ";
+		cout << "\n " << numMesh << " mesh textures ";
+		cout << "\n " << numDual << " dual plane textures ";
 		cout << "\n " << numMedu << " mesh & dual plane textures \n";
+		
+		cout << "\n " << number_of_unique_items << " unique items";
+		cout << "\n " << number_of_items << " total items \n";
 }
 
 void LoadOBJ(string inFolder, string fileIn, animated_model_t * aModel)
@@ -249,8 +350,6 @@ void LoadOBJ(string inFolder, string fileIn, animated_model_t * aModel)
     else {cout << "\nERROR : Couldn't load Obj\n"; return;}
     file.close();
 
-    extern int ReadTGAFile (string folder, texture_t * texture);
-	extern int ReadPaletteFile (void);
 	ReadPaletteFile();
 
     for (unsigned int i=0; i<aModel->nbTextures; i++){

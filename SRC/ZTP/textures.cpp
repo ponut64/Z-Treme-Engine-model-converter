@@ -91,6 +91,10 @@ void createFakeTexture(texture_t * t)
 	
 }
 
+	//////////////////////////////////////////////
+	// Ponut64 Addition
+	// Writing palette targa to memory in a particular format.
+	//////////////////////////////////////////////
 void	WritePaletteTables(unsigned char * data, TGA_HEADER info)
 {
 	
@@ -112,6 +116,10 @@ void	WritePaletteTables(unsigned char * data, TGA_HEADER info)
 	
 }
 
+	//////////////////////////////////////////////
+	// Ponut64 Addition
+	// Conversion of an RGB texture to the index of the closest color in the palette file.
+	//////////////////////////////////////////////
 void	ScanImgColor(unsigned char * data, texture_t * tex)
 {
 	
@@ -168,6 +176,11 @@ void	ScanImgColor(unsigned char * data, texture_t * tex)
 	
 }
 
+
+	//////////////////////////////////////////////
+	// Ponut64 Addition
+	// Loading of a 24 bit RGB targa file as the palette file.
+	//////////////////////////////////////////////
 void ReadPaletteFile(void)
 {
     string name;
@@ -220,14 +233,17 @@ void ReadPaletteFile(void)
 
 int ReadTGAFile (string folder, texture_t * texture)
 {
-	
     string name;
 	string newname;
     TGA_HEADER header;
 	int size = 0;
 	
-    cout << "\nAttempting to read TGA texture file...\n";
+    cout << "\n Attempting to read TGA texture file...\n";
 
+	//////////////////////////////////////////////
+	// Ponut64 Addition
+	// If the material name had a prefix, remove it when looking for the TGA file name.
+	//////////////////////////////////////////////
         std::size_t findDual = texture->name.find("DUAL_");  //Dual-planes
         std::size_t findMesh = texture->name.find("MESH_");  //Mesh polys
         std::size_t findMedu = texture->name.find("MEDU_");  //Mesh + dual plane polys
@@ -268,9 +284,16 @@ int ReadTGAFile (string folder, texture_t * texture)
     texture->width = header.width;
     texture->height = header.height;
 	
+	//////////////////////////////////////////////
+	// Ponut64 Addition
+	// If TGA is 24BPP RGB and the palette file is loaded, scan the image and find the best palette IDs to match it.
+	// If it is not loaded in that case, create a fake texture.
+	// If it doesn't otherwise match, create a fake texture.
+	// If it's an 8bpp indexed color TGA, write its data as the texture data raw.
+	//////////////////////////////////////////////
 	if(header.bitsperpixel == 24 && palIsLoaded == true){
 		ScanImgColor(img_data_addr, texture);
-		cout << "\n CONVERTING RGB TEXTURE \n";
+		cout << "CONVERTING RGB TEXTURE \n";
 	} else if(palIsLoaded == false)
 	{
 		createFakeTexture(texture);

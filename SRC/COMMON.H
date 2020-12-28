@@ -111,7 +111,7 @@ typedef struct
     pixel_t *       pixel;
     uint16_t        clut[16];
     uint8_t         nbFrames;
-    uint8_t         attributes;
+    char			attribute;
     ATTR            SGL_ATTR; //For SGL mainly, can be converted for ZTE format
 } texture_t;
 
@@ -139,6 +139,13 @@ typedef struct
     uint16_t startFrm;
     uint16_t endFrm;
 } animationControl_t;
+
+extern int		item_exception_vertices[64][4];
+extern int		items[64];
+extern int		item_number_package[64];
+extern float	item_positions[64][XYZ];
+extern int		number_of_items;
+extern int		number_of_unique_items;
 
 uint16_t        swap_endian_ushort(uint16_t value);
 int16_t         swap_endian_sshort( int16_t value);

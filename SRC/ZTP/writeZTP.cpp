@@ -571,15 +571,15 @@ void WRITE_TEXTURES(ofstream * file, animated_model_t * aModel)
     texture_t * t;
     for (unsigned short i=0; i<aModel->nbTextures; i++)
     {
-        t=&aModel->texture[i];
-		writeUint16(file, 0x7F7F);
-		writeU8(file, t->height);
-		writeU8(file, t->width);
-		tSize = t->height * t->width;
-		for(int k = 0; k < tSize; k++)
-		{
-			writeU8(file, t->pixel[k].a);
-		}
+			t=&aModel->texture[i];
+			writeUint16(file, 0x7F7F);
+			writeU8(file, t->height);
+			writeU8(file, t->width);
+			tSize = t->height * t->width;
+			for(int k = 0; k < tSize; k++)
+			{
+				writeU8(file, t->pixel[k].a);
+			}
     }
 
     cout << "Writing the textures to text file (for debugging)...\n\n";
@@ -655,15 +655,47 @@ WRITES COMPRESSED NORMALS AS 1-BYTE ANORM.H ENTRY
     }
 }
 
+	////////////////////////////////////////////
+	// Ponut64 Addition
+	// Write item data
+	// 0byte : total # of items
+	// 1byte : number of unique items
+	// then : 8 bytes per item : #, x, y, z, each a <short>
+	////////////////////////////////////////////
+void	write_item_data(ofstream * file, animated_model_t * aModel)
+{
+	writeU8(file, (unsigned char)number_of_items);
+	writeU8(file, (unsigned char)number_of_unique_items);
+	// If there are no items, don't write any more.
+	if(number_of_items == 0)
+	{
+		return;
+	}
+	// Otherwise, write:
+	// 1. Item number, as an unsigned short
+	// 2. Item position (as offets from center of mesh), in: X,Y,Z signed short (**thusly only whole integers)
+	// That makes item data as:
+	// number, x pos, y pos, z pos : 2 bytes * 4 = 8 bytes for each item
+	for(int i = 0; i < number_of_items; i++)
+	{
+		writeUint16(file, (unsigned short)items[i]);
+		writeSint16(file, (short)((int)item_positions[i][X]));
+		writeSint16(file, (short)((int)item_positions[i][Y]));
+		writeSint16(file, (short)((int)item_positions[i][Z]));
+	}
+}
+
+
 /********************************
 * WIP : Writes data to custom binary format
 
 WRITTEN ORDER:
-
+ **Ponut64 Modified**
 FIRST: HEADER
 SECOND: PDATA
 THIRD: ANIMATION DATA, IF PRESENT
-FINALLY: TEXTURES
+FOURTH: TEXTURES
+FINALLY: ITEM DATA, IF PRESENT
 *********************************/
 void write_model_binary(ofstream * file, animated_model_t * aModel)
 {
@@ -696,6 +728,11 @@ void write_model_binary(ofstream * file, animated_model_t * aModel)
 	
     WRITE_TEXTURES(file, aModel);
 	
+	////////////////////////////////////////////
+	// Ponut64 Addition
+	// Write item data
+	////////////////////////////////////////////
+	write_item_data(file, aModel);
 }
 
 
