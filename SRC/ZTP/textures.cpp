@@ -247,14 +247,18 @@ int ReadTGAFile (string folder, texture_t * texture)
         std::size_t findDual = texture->name.find("DUAL_");  //Dual-planes
         std::size_t findMesh = texture->name.find("MESH_");  //Mesh polys
         std::size_t findMedu = texture->name.find("MEDU_");  //Mesh + dual plane polys
+        std::size_t findDark = texture->name.find("DARK_");  //Dark polys
+        std::size_t findPort = texture->name.find("PORT_");  // Portal-defining polygon
 		
-		if(findDual == 0 || findMesh == 0 || findMedu == 0) //If a preprocessor is found, remove the preprocessor from the file name
+        std::size_t findSectorSpecs = texture->name.find(";");  // Find the sector specifications of a name
+		newname = texture->name;
+		if(findSectorSpecs != std::string::npos) newname.erase(newname.end()-3, newname.end());
+		
+		if(findDual == 0 || findMesh == 0 || findMedu == 0 || findPort == 0 || findDark == 0) //If a preprocessor is found, remove the preprocessor from the file name
 		{
-	newname = texture->name;
 	newname.erase(newname.begin(), newname.begin()+5);
     name =  folder + newname + ".TGA"; //Temporary : Will break under several conditions
 		} else {
-	newname = texture->name;
     name =  folder + newname + ".TGA"; //Temporary : Will break under several conditions
 		}
 

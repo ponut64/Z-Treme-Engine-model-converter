@@ -100,6 +100,48 @@ typedef struct {
     uint16_t	 dir ;
 } ATTR ;
 
+//What will *I* need, in my attribute data?
+// 1 -> Dual or single plane flag
+// 1a -> Mesh or un-mesh flag
+// 2 -> Collectible or un-collidable flag (sometimes used)
+// 3 -> Two flags for sorting rules, I guess? Engine doesn't use these...
+// 4 -> Texture number, as an unsigned 16-bit value
+// 5 -> Sector numbers, as two unsigned 8-bit values.
+// 6 -> Portal or not a portal flag
+
+
+/*
+	|	0		|	1		|	2		|	3		|	4	-	5 	|	6	-	7 |		
+	  Dual-plane	Mesh		Physical	MSB On		Tex. flip	  Sorting rule
+*/
+	#define GV_FLAG_SINGLE	(0x1) // Zero, dual-plane. One, single-plane.
+	#define GV_FLAG_MESH	(0x2) // Zero, no mesh. One, mesh.
+	#define GV_FLAG_PHYS	(0x4) // Zero, physical plane (in supported objects). Zero, no collision with plane.
+	#define GV_FLAG_DARK	(0x8) // Zero, normal light. One, MSB is enabled, making the polygon dark.
+	#define GV_SORT_MAX		(0x40)
+	#define GV_SORT_CEN		(0x80)
+	#define GV_SORT_MIN		(0xC0)
+	#define GV_FLIP_V		(0x20)
+	#define GV_FLIP_H		(0x10)
+	#define GV_FLIP_HV		(0x30)
+	#define GET_SORT_DATA(n)	(n & 0xC0)
+	#define GET_FLIP_DATA(n)	(n & 0x30)
+	
+/*
+Portal information:
+Polygon ID of the next portal. 
+If it is 255, this polygon is not a portal.
+If it is 254, this is the last portal.
+*/
+
+typedef struct {
+	uint8_t render_data_flags;
+	uint8_t portal_information;
+	uint8_t first_sector_number;
+	uint8_t second_sector_number;
+	uint16_t texno;
+} gvAtr;
+
 typedef struct
 {
     unsigned int    width;
@@ -113,6 +155,7 @@ typedef struct
     uint8_t         nbFrames;
     char			attribute;
     ATTR            SGL_ATTR; //For SGL mainly, can be converted for ZTE format
+	gvAtr			GV_ATTR; //For my stupid single-use format
 } texture_t;
 
 

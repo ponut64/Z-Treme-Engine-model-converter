@@ -18,6 +18,12 @@ VECTOR normLUT[] =
 /*
 Model data header
 
+********************* IT WILL CRASH IF IT ISN'T!*********************
+********************* IT WILL CRASH IF IT ISN'T!*********************
+****IF YOU EVER MODIFY THIS, BE AWARE: IT MUST BE 4-BYTE ALIGNED.****
+********************* IT WILL CRASH IF IT ISN'T!*********************
+********************* IT WILL CRASH IF IT ISN'T!*********************
+
 0-1 byte: # of meshes
 2-3 byte: # of textures
 4-7 byte: total size of PDATA + compressed verts [rather, offset to end of]
@@ -26,6 +32,8 @@ Model data header
 14-15 byte: x_radius
 16-17 byte: y_radius
 18-19 byte: z_radius
+20 byte: polygon # of the first portal 
+21-23 byte: padding.
 */
 void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 {
@@ -57,9 +65,29 @@ void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 
     //Animation : Updated 2018/05/31
     writeUint16(file, aModel->nbFrames);
+	//Radius : 2020
     writeUint16(file, aModel->x_radius);
     writeUint16(file, aModel->y_radius);
     writeUint16(file, aModel->z_radius);
+	//Portal stuff: 2021
+	unsigned char first_portal_written_to_header = 255;
+        //ATTR, 12 bytes each // 5 bytes, in my case
+        for (unsigned int ii=0; ii< aModel->model[0].nbPolygon; ii++)
+        {
+			if(aModel->texture[aModel->model[0].pltbl[ii].texture].GV_ATTR.portal_information == 254)
+			{
+				first_portal_written_to_header = ii;
+			}
+        }
+	writeUint32(file, (unsigned int)first_portal_written_to_header);
+	
+	if(first_portal_written_to_header == 255)
+	{
+	cout << "\n Mesh had no portals. ";
+	} else {
+	cout << "\n First portal: " << (unsigned int)first_portal_written_to_header << " \n"; 
+	}
+	
 }
 
 void	crossf(float vector1[3], float vector2[3], float output[3])
@@ -505,11 +533,29 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 		//In this program, we unflip the textures (so they are read in as top-left origin).
 		permutate(verts, vIDs);
 		permutate(verts, vIDs);
+		
+		////////////////////////////////////////////
+		//	Triangle Handling
+		//	Rather than help with the texture directions, triangles are always oriented such that vertex 2 == vertex 3.
+		//	At this step FLIP directives could be written to the attributes of the polygon to preserve direction in some cases.
+		////////////////////////////////////////////
+			if(vIDs[0] == vIDs[1] || vIDs[0] == vIDs[3] || vIDs[1] == vIDs[2])
+			{
+				do{
+					permutate(verts, vIDs);
+				}while(vIDs[2] != vIDs[3]);
+			}
+		
 		//Write vertice IDs
 			poly->vertIdx[0] = vIDs[0];
 			poly->vertIdx[1] = vIDs[1];
 			poly->vertIdx[2] = vIDs[2];
 			poly->vertIdx[3] = vIDs[3];
+			
+
+		
+		
+		
 }
 
 /*****
@@ -517,6 +563,9 @@ FOR SGL (mainly for you Ponut64!) : This writes all the PDATA in a sequential or
 *****/
 void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 {
+	
+	unsigned char first_portal = 254;
+	
     for (unsigned int i=0; i<aModel->nbModels; i++){
         //PDATA, including buffers for the pointers
         writeUint32(file, 0); //Empty 4-byte area for the PNTBL pointer [verts]
@@ -549,19 +598,32 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
                 writeUint16(file, aModel->model[i].pltbl[ii].vertIdx[j]);
             }
         }
-        //ATTR, 12 bytes each
+        //ATTR, 12 bytes each // 5 bytes, in my case
         for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
         {
-            file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.flag, sizeof(uint8_t));
-            file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.sorting, sizeof(uint8_t));
-            writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.texno);
-            writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.atrb);
-            writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.colno);
-            writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.gstb);
-            writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.dir);
+            // file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.flag, sizeof(uint8_t));
+            // file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.sorting, sizeof(uint8_t));
+            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.texno);
+            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.atrb);
+            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.colno);
+            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.gstb);
+            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.dir);
+
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags, sizeof(uint8_t));
+			if(aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information == 254)
+			{
+			file->write((char*)&first_portal, sizeof(uint8_t));
+			first_portal = ii;
+			} else {
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information, sizeof(uint8_t));
+			}
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector_number, sizeof(uint8_t));
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector_number, sizeof(uint8_t));
+			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.texno);
         }
 
     }
+
 }
 
 void WRITE_TEXTURES(ofstream * file, animated_model_t * aModel)
@@ -699,7 +761,6 @@ FINALLY: ITEM DATA, IF PRESENT
 *********************************/
 void write_model_binary(ofstream * file, animated_model_t * aModel)
 {
-
 
     WRITE_MDATA(file, aModel);
 	WRITE_SGL_PDATA(file, aModel);

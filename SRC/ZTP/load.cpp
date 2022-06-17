@@ -284,11 +284,14 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
     if (aModel->nbTextures <= 0) return;
 
     texture_t * t;
+	string newname;
 	
 	int numDual = 0;
 	int numMesh = 0;
 	int numMedu = 0;
+	int numDark = 0;
 	int numNormal = 0;
+	int numPort = 0;
 	
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
@@ -300,34 +303,105 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
         std::size_t findDual = t->name.find("DUAL_");	//Dual-planes
         std::size_t findMesh = t->name.find("MESH_");	//Mesh polys
         std::size_t findMedu = t->name.find("MEDU_");	//Mesh + dual plane polys
+		std::size_t findDark = t->name.find("DARK_");   //Darkening polys
+		std::size_t findPort = t->name.find("PORT_");   // Portal polygons
+		
+        std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
+		
+		if(findSectorSpecs != std::string::npos)
+		{
+			newname = t->name;
+			newname.erase(newname.begin(), newname.end()-2);
+			newname.erase(newname.end()-1, newname.end());
+			t->GV_ATTR.first_sector_number = atoi(newname.c_str());
+
+			newname = t->name;
+			newname.erase(newname.begin(), newname.end()-1);
+
+			t->GV_ATTR.second_sector_number = atoi(newname.c_str());
+
+			cout << "\n " << t->name << " for this texture ";
+			cout << "\n " << (int)t->GV_ATTR.first_sector_number << " is the first sector ";
+			cout << "\n " << (int)t->GV_ATTR.second_sector_number << " is the second sector \n";
+		}
 	
 		if(findDual == 0) //If DUAL is found at the start
 		{
 			numDual++;
 		t->SGL_ATTR=ATTRIBUTE(Dual_Plane,SORT_CEN, i, 0, No_Gouraud,
 		Window_In|MESHoff|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		} else if(findMesh == 0)
 		{
 			numMesh++;
 		t->SGL_ATTR=ATTRIBUTE(Single_Plane,SORT_CEN, i, 0, No_Gouraud,
 		Window_In|MESHon|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		
+		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		} else if(findMedu == 0)
 		{
 			numMedu++;
 		t->SGL_ATTR=ATTRIBUTE(Dual_Plane,SORT_CEN, i, 0, No_Gouraud,
 		Window_In|MESHon|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+
+		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		
+		} else if(findDark == 0)
+		{
+			numDark++;
+		t->SGL_ATTR=ATTRIBUTE(Dual_Plane,SORT_CEN, i, 0, No_Gouraud,
+		Window_In|MESHoff|MSBon|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		} else if(findPort == 0)
+		{
+			numPort++;
+		//No SGL attr
+		//It's a portal. This is linked list information, write as if it is the last in the list.
+		t->GV_ATTR.portal_information = 254; 
+		
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
+		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
 		} else {
 			numNormal++;
 		t->SGL_ATTR=ATTRIBUTE(Single_Plane,SORT_CEN, i, 0, No_Gouraud,
 		Window_In|MESHoff|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		
+		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		}
+
+		t->GV_ATTR.texno = i;
 		
     }
 	
+		cout << "\n " << numPort << " portals ";
 		cout << "\n " << numNormal << " normal textures ";
 		cout << "\n " << numMesh << " mesh textures ";
 		cout << "\n " << numDual << " dual plane textures ";
-		cout << "\n " << numMedu << " mesh & dual plane textures \n";
+		cout << "\n " << numMedu << " mesh & dual plane textures ";
+		cout << "\n " << numDark << " dark textures \n";
 		
 		cout << "\n " << number_of_unique_items << " unique items";
 		cout << "\n " << number_of_items << " total items \n";
