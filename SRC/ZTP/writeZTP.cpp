@@ -564,7 +564,7 @@ FOR SGL (mainly for you Ponut64!) : This writes all the PDATA in a sequential or
 void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 {
 	
-	unsigned char first_portal = 254;
+	uint16_t first_portal = 254;
 	
     for (unsigned int i=0; i<aModel->nbModels; i++){
         //PDATA, including buffers for the pointers
@@ -598,7 +598,7 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
                 writeUint16(file, aModel->model[i].pltbl[ii].vertIdx[j]);
             }
         }
-        //ATTR, 12 bytes each // 5 bytes, in my case
+        //ATTR, 12 bytes each // 8 bytes: 2, 2, 1, 1, 2
         for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
         {
             // file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.flag, sizeof(uint8_t));
@@ -609,13 +609,16 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
             // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.gstb);
             // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.dir);
 
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags, sizeof(uint8_t));
+			//file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags, sizeof(uint8_t));
+			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags);
 			if(aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information == 254)
 			{
-			file->write((char*)&first_portal, sizeof(uint8_t));
+			//file->write((char*)&first_portal, sizeof(uint8_t));
+			writeUint16(file, first_portal);
 			first_portal = ii;
 			} else {
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information, sizeof(uint8_t));
+			//file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information, sizeof(uint8_t));
+			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information);
 			}
 			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector_number, sizeof(uint8_t));
 			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector_number, sizeof(uint8_t));

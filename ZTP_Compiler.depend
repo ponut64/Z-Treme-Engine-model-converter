@@ -70,3 +70,35 @@
 
 1575339253 c:\users\ponylover\desktop\conv\src\ztp\anorms.h
 
+1579252443 source:d:\satstuff\git\z-treme-engine-model-converter\main.cpp
+	"SRC/COMMON.H"
+
+1675410852 d:\satstuff\git\z-treme-engine-model-converter\src\common.h
+	<windows.h>
+	<iostream>
+	<fstream>
+	<string>
+	<sstream>
+	<cmath>
+	<algorithm>
+	"ZTE/saturnDef.h"
+
+1575335653 d:\satstuff\git\z-treme-engine-model-converter\src\zte\saturndef.h
+
+1579252249 source:d:\satstuff\git\z-treme-engine-model-converter\src\ztp\light.cpp
+	"../COMMON.H"
+
+1632284448 source:d:\satstuff\git\z-treme-engine-model-converter\src\ztp\load.cpp
+	"../COMMON.H"
+
+1632265489 source:d:\satstuff\git\z-treme-engine-model-converter\src\ztp\textures.cpp
+	"../COMMON.H"
+
+1580102925 source:d:\satstuff\git\z-treme-engine-model-converter\src\ztp\tools.cpp
+	"../COMMON.H"
+
+1575335653 source:d:\satstuff\git\z-treme-engine-model-converter\src\ztp\vector.cpp
+	"../COMMON.H"
+
+1575335653 source:d:\satstuff\git\z-treme-engine-model-converter\src\ztp\writeztptext.cpp
+

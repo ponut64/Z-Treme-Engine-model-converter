@@ -135,8 +135,8 @@ If it is 254, this is the last portal.
 */
 
 typedef struct {
-	uint8_t render_data_flags;
-	uint8_t portal_information;
+	uint16_t render_data_flags;
+	uint16_t portal_information;
 	uint8_t first_sector_number;
 	uint8_t second_sector_number;
 	uint16_t texno;
