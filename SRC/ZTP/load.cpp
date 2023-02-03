@@ -292,6 +292,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 	int numDark = 0;
 	int numNormal = 0;
 	int numPort = 0;
+	int numNdiv = 0;
+	int numGost = 0;
 	
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
@@ -305,6 +307,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
         std::size_t findMedu = t->name.find("MEDU_");	//Mesh + dual plane polys
 		std::size_t findDark = t->name.find("DARK_");   //Darkening polys
 		std::size_t findPort = t->name.find("PORT_");   // Portal polygons
+		std::size_t findNdiv = t->name.find("NDIV_");   // No subdivision polygons (for BUILD-type)
+		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
 		
         std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
 		
@@ -328,8 +332,6 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		if(findDual == 0) //If DUAL is found at the start
 		{
 			numDual++;
-		t->SGL_ATTR=ATTRIBUTE(Dual_Plane,SORT_CEN, i, 0, No_Gouraud,
-		Window_In|MESHoff|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 		
@@ -338,8 +340,6 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		} else if(findMesh == 0)
 		{
 			numMesh++;
-		t->SGL_ATTR=ATTRIBUTE(Single_Plane,SORT_CEN, i, 0, No_Gouraud,
-		Window_In|MESHon|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 		
@@ -350,8 +350,6 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		} else if(findMedu == 0)
 		{
 			numMedu++;
-		t->SGL_ATTR=ATTRIBUTE(Dual_Plane,SORT_CEN, i, 0, No_Gouraud,
-		Window_In|MESHon|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
@@ -362,8 +360,6 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		} else if(findDark == 0)
 		{
 			numDark++;
-		t->SGL_ATTR=ATTRIBUTE(Dual_Plane,SORT_CEN, i, 0, No_Gouraud,
-		Window_In|MESHoff|MSBon|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 		
@@ -380,10 +376,26 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
+		} else if(findNdiv == 0)
+		{
+			numNdiv++;
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		
+		t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		} else if(findGost == 0)
+		{
+			numGost++;
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		
+		//In this case, the "PHYS" flag is left 0.
+		//t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		} else {
 			numNormal++;
-		t->SGL_ATTR=ATTRIBUTE(Single_Plane,SORT_CEN, i, 0, No_Gouraud,
-		Window_In|MESHoff|HSSon|ECdis|SPdis|CL64Bnk,sprNoflip, UseNearClip);
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 		
@@ -401,7 +413,9 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		cout << "\n " << numMesh << " mesh textures ";
 		cout << "\n " << numDual << " dual plane textures ";
 		cout << "\n " << numMedu << " mesh & dual plane textures ";
-		cout << "\n " << numDark << " dark textures \n";
+		cout << "\n " << numDark << " dark textures ";
+		cout << "\n " << numNdiv << " No subdivision textures ";
+		cout << "\n " << numGost << " No collision textures \n";
 		
 		cout << "\n " << number_of_unique_items << " unique items";
 		cout << "\n " << number_of_items << " total items \n";
