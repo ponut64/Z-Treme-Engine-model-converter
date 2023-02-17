@@ -47,8 +47,8 @@ int ReadTGAHeader(unsigned char * readByte, TGA_HEADER * header)
 	
 	header->bitsperpixel = readByte[16];
 	
-	header->width = (readByte[12] | readByte[13]<<8);
-	header->height = (readByte[14] | readByte[15]<<8);
+	header->height = (readByte[12] | readByte[13]<<8);
+	header->width = (readByte[14] | readByte[15]<<8);
 	
 	unsigned char imdat = header->idlength + header->colourmaplength + 18;
 	
@@ -79,14 +79,20 @@ void createFakeTexture(texture_t * t)
     t->height = 8;
     t->pixel = new pixel_t[64];
 	
+	unsigned char	bad_tex_tbl[64] = {
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 6, 6, 1, 1, 1,
+	1, 1, 6, 6, 6, 1, 1, 1,
+	1, 1, 1, 6, 6, 1, 1, 1,
+	1, 1, 1, 6, 6, 1, 1, 1,
+	1, 1, 1, 6, 6, 1, 1, 1,
+	1, 6, 6, 6, 6, 6, 6, 1,
+	1, 1, 1, 1, 1, 1, 1, 1	
+	};
+	
 	for(int p = 0; p < 64; p++)
 	{
-		if( p & 1)
-		{
-		t->pixel[p].a = 47;	
-		} else {
-		t->pixel[p].a = 55;
-		}
+		t->pixel[p].a = bad_tex_tbl[p];	
 	}
 	
 }
@@ -231,46 +237,77 @@ void ReadPaletteFile(void)
 }
 
 
-int ReadTGAFile (string folder, texture_t * texture)
+int ReadTGAFile (string folder, texture_t * t)
 {
     string name;
 	string newname;
     TGA_HEADER header;
 	int size = 0;
 	
-    cout << "\n Attempting to read TGA texture file...\n";
+    cout << "\n Attempting to read TGA t file...\n";
 
 	//////////////////////////////////////////////
 	// Ponut64 Addition
 	// If the material name had a prefix, remove it when looking for the TGA file name.
 	//////////////////////////////////////////////
-        std::size_t findDual = texture->name.find("DUAL_");  //Dual-planes
-        std::size_t findMesh = texture->name.find("MESH_");  //Mesh polys
-        std::size_t findMedu = texture->name.find("MEDU_");  //Mesh + dual plane polys
-        std::size_t findDark = texture->name.find("DARK_");  //Dark polys
-        std::size_t findPort = texture->name.find("PORT_");  // Portal-defining polygon
-		std::size_t findNdiv = texture->name.find("NDIV_");   // No subdivision polygons (for BUILD-type)
-		std::size_t findGost = texture->name.find("GOST_");   // No collision polygons (for BUILD-type)
+        std::size_t findDual = t->name.find("DUAL_");  //Dual-planes
+        std::size_t findMesh = t->name.find("MESH_");  //Mesh polys
+        std::size_t findMedu = t->name.find("MEDU_");  //Mesh + dual plane polys
+        std::size_t findDark = t->name.find("DARK_");  //Dark polys
+        std::size_t findPort = t->name.find("PORT_");  // Portal-defining polygon
+		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
+		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
+		//// Starting to get whacky
+		std::size_t findParams[15];		// Also textures whose names will be texture ID numbers, not file names
+		findParams[0]	= t->name.find("NDMG_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[1]	= t->name.find("NDM0_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[2]	= t->name.find("ND0G_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[3]	= t->name.find("N0MG_");   // No subdivision, single-plane, mesh, no collision
+		findParams[4]	= t->name.find("ND00_");   // No subdivision, dual plane, opaque, collision
+		findParams[5]	= t->name.find("N0M0_");   // No subdivision, single-plane, mesh, collision
+		findParams[6]	= t->name.find("N00G_");   // No subdivision, single-plane, opaque, no collision
+		findParams[7]	= t->name.find("N000_");   // No subdivision, single-plane, opaque, collision
+		findParams[8]	= t->name.find("0DMG_");   // Dividable, dual-plane, mesh, no collision
+		findParams[9]	= t->name.find("0DM0_");   // Dividable, dual-plane, mesh, colllision
+		findParams[10]	= t->name.find("0D0G_");   // Dividable, dual-plane, opaque, no collision
+		findParams[11]	= t->name.find("00MG_");   // Dividable, single-plane, mesh, no collision
+		findParams[12]	= t->name.find("0D00_");   // Dividable, dual plane, opaque, collision
+		findParams[13]	= t->name.find("00M0_");   // Dividable, single-plane, mesh, collision
+		findParams[14]	= t->name.find("000G_");   // Dividable, single-plane, opaque, no collision
 		
-        std::size_t findSectorSpecs = texture->name.find(";");  // Find the sector specifications of a name
-		newname = texture->name;
+		bool found_special = false;
+		for(int i = 0; i < 15; i++)
+		{
+			if(findParams[i] == 0) 
+			{
+				found_special = true;
+				break;
+			}
+		}
+		if(found_special || findIndx == 0 || findPort == 0)
+		{
+			cout << t->name + "\n";
+			cout << "Texture was determined to be by-index, no texture loaded/generated \n";
+			return -1; //Do not add a texture in these cases.
+		}
+		
+        std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
+		newname = t->name;
 		if(findSectorSpecs != std::string::npos) newname.erase(newname.end()-3, newname.end());
 		
 		//If a preprocessor is found, remove the preprocessor from the file name
-		if(findDual == 0 || findMesh == 0 || findMedu == 0 || findPort == 0 ||
-			findDark == 0 || findNdiv == 0 || findGost == 0) {
+		if(findDual == 0 || findMesh == 0 || findMedu == 0 || findDark == 0 || findGost == 0) {
 	newname.erase(newname.begin(), newname.begin()+5);
+			}
     name =  folder + newname + ".TGA"; //Temporary : Will break under several conditions
-		} else {
-    name =  folder + newname + ".TGA"; //Temporary : Will break under several conditions
-		}
+
 
     ifstream ibinfile(name.c_str(), ios::in | ios::binary | ios::ate);
 
     if (!ibinfile.is_open())
         {
-            cout << "ERROR : COULDN'T LOAD FILE " << newname.c_str() << ".TGA, creating a bad texture \n";
-            createFakeTexture(texture);
+            cout << "ERROR : COULDN'T LOAD FILE " << newname.c_str() << ".TGA, creating a bad t \n";
+            createFakeTexture(t);
             return -1;
         }
 	size = ibinfile.tellg();
@@ -280,41 +317,41 @@ int ReadTGAFile (string folder, texture_t * texture)
     ibinfile.close();
 
     ReadTGAHeader(tgaDataArea, &header);
-        cout << "Texture " << newname << ", size : " << header.width << "x" << header.height << ", pixel depth : " << header.bitsperpixel << ", RLE = " << header.datatypecode << "\n";
+        cout << "t " << newname << ", size : " << header.width << "x" << header.height << ", pixel depth : " << header.bitsperpixel << ", RLE = " << header.datatypecode << "\n";
 
     if (header.datatypecode == 9 || header.datatypecode == 10) {
-            createFakeTexture(texture);
+            createFakeTexture(t);
             return -1;
-		cout << "RLE currently not supported, creating bad texture \n";
+		cout << "RLE currently not supported, creating bad t \n";
 		}
 		
-    texture->width = header.width;
-    texture->height = header.height;
+    t->width = header.width;
+    t->height = header.height;
 	
 	//////////////////////////////////////////////
 	// Ponut64 Addition
 	// If TGA is 24BPP RGB and the palette file is loaded, scan the image and find the best palette IDs to match it.
-	// If it is not loaded in that case, create a fake texture.
-	// If it doesn't otherwise match, create a fake texture.
-	// If it's an 8bpp indexed color TGA, write its data as the texture data raw.
+	// If it is not loaded in that case, create a fake t.
+	// If it doesn't otherwise match, create a fake t.
+	// If it's an 8bpp indexed color TGA, write its data as the t data raw.
 	//////////////////////////////////////////////
 	if(header.bitsperpixel == 24 && palIsLoaded == true){
-		ScanImgColor(img_data_addr, texture);
-		cout << "CONVERTING RGB TEXTURE \n";
+		ScanImgColor(img_data_addr, t);
+		cout << "CONVERTING RGB t \n";
 	} else if(palIsLoaded == false)
 	{
-		createFakeTexture(texture);
+		createFakeTexture(t);
 		return -1;
-		cout << "No palette was found, an RGB texture was found, creating bad texture \n";
+		cout << "No palette was found, an RGB t was found, creating bad t \n";
 	} else if(header.bitsperpixel != 8){
-		createFakeTexture(texture);
+		createFakeTexture(t);
 		return -1;
 		cout << "24BPP RGB or indexed color, no RLE, please \n";
 	}
 
-    texture->pixel = new pixel_t[header.height*header.width];
+    t->pixel = new pixel_t[header.height*header.width];
 
-    ReadTGAData(img_data_addr, texture, header.bitsperpixel);
+    ReadTGAData(img_data_addr, t, header.bitsperpixel);
 
 	free(tgaDataArea);
 

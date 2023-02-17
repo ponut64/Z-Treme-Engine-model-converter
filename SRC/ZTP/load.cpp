@@ -294,21 +294,50 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 	int numPort = 0;
 	int numNdiv = 0;
 	int numGost = 0;
+	int numIndx = 0;
 	
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
         t = &aModel->texture[i];
 	//////////////////////////////////////////////
 	// Ponut64 Addition
-	// Find the texture types based on the prefix of the name and generate the appropriate attbl for it.
+	// If the material name had a prefix, remove it when looking for the TGA file name.
 	//////////////////////////////////////////////
-        std::size_t findDual = t->name.find("DUAL_");	//Dual-planes
-        std::size_t findMesh = t->name.find("MESH_");	//Mesh polys
-        std::size_t findMedu = t->name.find("MEDU_");	//Mesh + dual plane polys
-		std::size_t findDark = t->name.find("DARK_");   //Darkening polys
-		std::size_t findPort = t->name.find("PORT_");   // Portal polygons
-		std::size_t findNdiv = t->name.find("NDIV_");   // No subdivision polygons (for BUILD-type)
+        std::size_t findDual = t->name.find("DUAL_");  //Dual-planes
+        std::size_t findMesh = t->name.find("MESH_");  //Mesh polys
+        std::size_t findMedu = t->name.find("MEDU_");  //Mesh + dual plane polys
+        std::size_t findDark = t->name.find("DARK_");  //Dark polys
+        std::size_t findPort = t->name.find("PORT_");  // Portal-defining polygon
+		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
+		//// Starting to get whacky
+		std::size_t findParams[15];		// Also textures whose names will be texture ID numbers, not file names
+		findParams[0]	= t->name.find("NDMG_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[1]	= t->name.find("NDM0_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[2]	= t->name.find("ND0G_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[3]	= t->name.find("N0MG_");   // No subdivision, single-plane, mesh, no collision
+		findParams[4]	= t->name.find("ND00_");   // No subdivision, dual plane, opaque, collision
+		findParams[5]	= t->name.find("N0M0_");   // No subdivision, single-plane, mesh, collision
+		findParams[6]	= t->name.find("N00G_");   // No subdivision, single-plane, opaque, no collision
+		findParams[7]	= t->name.find("N000_");   // No subdivision, single-plane, opaque, collision
+		findParams[8]	= t->name.find("0DMG_");   // Dividable, dual-plane, mesh, no collision
+		findParams[9]	= t->name.find("0DM0_");   // Dividable, dual-plane, mesh, colllision
+		findParams[10]	= t->name.find("0D0G_");   // Dividable, dual-plane, opaque, no collision
+		findParams[11]	= t->name.find("00MG_");   // Dividable, single-plane, mesh, no collision
+		findParams[12]	= t->name.find("0D00_");   // Dividable, dual plane, opaque, collision
+		findParams[13]	= t->name.find("00M0_");   // Dividable, single-plane, mesh, collision
+		findParams[14]	= t->name.find("000G_");   // Dividable, single-plane, opaque, no collision
+		
+		bool found_special = false;
+		for(int i = 0; i < 15; i++)
+		{
+			if(findParams[i] == 0) 
+			{
+				found_special = true;
+				break;
+			}
+		}
+
 		
         std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
 		
@@ -376,15 +405,6 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
-		} else if(findNdiv == 0)
-		{
-			numNdiv++;
-		
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
-		
-		t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
-		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
-		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		} else if(findGost == 0)
 		{
 			numGost++;
@@ -393,8 +413,43 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		
 		//In this case, the "PHYS" flag is left 0.
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		} else if(found_special == true)
+		{
+		
+		std::size_t findN = t->name.find("N");
+		std::size_t findD = t->name.find("D");
+		std::size_t findM = t->name.find("M");
+		std::size_t findG = t->name.find("G");
+		if(findN == 0)
+		{
+			t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
+			numNdiv++;
+		}
+		if(findD == string::npos)
+		{
+			t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		} else {
+			numDual++;
+		}
+		if(findM == 2)
+		{
+			t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
+			numMesh++;
+		}
+		if(findG == string::npos)
+		{
+			t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
+		} else {
+			numGost++;
+		}
+		
+		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		
+		} else {
+			
 			numNormal++;
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
@@ -404,11 +459,22 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		}
 
+		if(found_special != true && findIndx == string::npos && findPort == string::npos)
+		{
 		t->GV_ATTR.texno = i;
+		} else {
+        std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
+		newname = t->name;
+		if(findSectorSpecs != std::string::npos) newname.erase(newname.end()-3, newname.end());
+		newname.erase(newname.begin(), newname.begin()+5);
+		t->GV_ATTR.texno = stoi(newname);
+		numIndx++;
+		}
 		
     }
 	
 		cout << "\n " << numPort << " portals ";
+		cout << "\n " << numIndx << " textures referring to index";
 		cout << "\n " << numNormal << " normal textures ";
 		cout << "\n " << numMesh << " mesh textures ";
 		cout << "\n " << numDual << " dual plane textures ";
