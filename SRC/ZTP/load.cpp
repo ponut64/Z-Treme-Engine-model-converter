@@ -295,6 +295,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 	int numNdiv = 0;
 	int numGost = 0;
 	int numIndx = 0;
+	int numLadder = 0;
+	int numClimbable = 0;
 	
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
@@ -311,7 +313,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
 		//// Starting to get whacky
-		std::size_t findParams[15];		// Also textures whose names will be texture ID numbers, not file names
+		int numParams = 31;
+		std::size_t findParams[numParams];		// Also textures whose names will be texture ID numbers, not file names
 		findParams[0]	= t->name.find("NDMG_");   // No subdivision, dual-plane, mesh, no collision
 		findParams[1]	= t->name.find("NDM0_");   // No subdivision, dual-plane, mesh, colllision
 		findParams[2]	= t->name.find("ND0G_");   // No subdivision, dual-plane, opaque, no collision
@@ -328,8 +331,27 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[13]	= t->name.find("00M0_");   // Dividable, single-plane, mesh, collision
 		findParams[14]	= t->name.find("000G_");   // Dividable, single-plane, opaque, no collision
 		
+		findParams[15]	= t->name.find("NDML_");   // No subdivision, dual-plane, mesh, ladder
+		findParams[16]	= t->name.find("NDMC_");   // No subdivision, dual-plane, mesh, climbable
+		findParams[17]	= t->name.find("ND0L_");   // No subdivision, dual-plane, opaque, ladder
+		findParams[18]	= t->name.find("ND0C_");   // No subdivision, dual plane, opaque, climbable
+		findParams[19]	= t->name.find("N0ML_");   // No subdivision, single-plane, mesh, ladder
+		findParams[20]	= t->name.find("N0MC_");   // No subdivision, single-plane, mesh, climbable
+		findParams[21]	= t->name.find("N00L_");   // No subdivision, single-plane, opaque, ladder
+		findParams[22]	= t->name.find("N00C_");   // No subdivision, single-plane, opaque, climbable
+		findParams[23]	= t->name.find("0DML_");   // Dividable, dual-plane, mesh, ladder
+		findParams[24]	= t->name.find("0DMC_");   // Dividable, dual-plane, mesh, climbable
+		findParams[25]	= t->name.find("0D0L_");   // Dividable, dual-plane, opaque, ladder
+		findParams[26]	= t->name.find("0D0C_");   // Dividable, dual plane, opaque, climbable
+		findParams[27]	= t->name.find("00ML_");   // Dividable, single-plane, mesh, ladder
+		findParams[28]	= t->name.find("00MC_");   // Dividable, single-plane, mesh, climbable
+		findParams[29]	= t->name.find("000L_");   // Dividable, single-plane, opaque, ladder
+		findParams[30]	= t->name.find("000C_");   // Dividable, single-plane, opaque, climbable
+		
+		
+		
 		bool found_special = false;
-		for(int i = 0; i < 15; i++)
+		for(int i = 0; i < numParams; i++)
 		{
 			if(findParams[i] == 0) 
 			{
@@ -422,6 +444,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		std::size_t findD = t->name.find("D");
 		std::size_t findM = t->name.find("M");
 		std::size_t findG = t->name.find("G");
+		std::size_t findL = t->name.find("L");
+		std::size_t findC = t->name.find("C");
 		if(findN == 0)
 		{
 			t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
@@ -443,6 +467,18 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		} else {
 			numGost++;
+		}
+		if(findL == 3)
+		{
+			t->GV_ATTR.render_data_flags |= GV_FLAG_LADDER;
+			t->GV_ATTR.render_data_flags |= GV_FLAG_CLIMBABLE;
+			numLadder++;
+			numClimbable++;
+		}
+		if(findC == 3)
+		{
+			t->GV_ATTR.render_data_flags |= GV_FLAG_CLIMBABLE;
+			numClimbable++;
 		}
 		
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
@@ -473,6 +509,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		
     }
 	
+		cout << "\n " << numClimbable << " climbable ";
+		cout << "\n " << numLadder << " ladder ";
 		cout << "\n " << numPort << " portals ";
 		cout << "\n " << numIndx << " textures referring to index";
 		cout << "\n " << numNormal << " normal textures ";

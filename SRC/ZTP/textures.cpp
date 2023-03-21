@@ -258,7 +258,8 @@ int ReadTGAFile (string folder, texture_t * t)
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
 		//// Starting to get whacky
-		std::size_t findParams[15];		// Also textures whose names will be texture ID numbers, not file names
+		int numParams = 31;
+		std::size_t findParams[numParams];		// Also textures whose names will be texture ID numbers, not file names
 		findParams[0]	= t->name.find("NDMG_");   // No subdivision, dual-plane, mesh, no collision
 		findParams[1]	= t->name.find("NDM0_");   // No subdivision, dual-plane, mesh, colllision
 		findParams[2]	= t->name.find("ND0G_");   // No subdivision, dual-plane, opaque, no collision
@@ -275,8 +276,25 @@ int ReadTGAFile (string folder, texture_t * t)
 		findParams[13]	= t->name.find("00M0_");   // Dividable, single-plane, mesh, collision
 		findParams[14]	= t->name.find("000G_");   // Dividable, single-plane, opaque, no collision
 		
+		findParams[15]	= t->name.find("NDML_");   // No subdivision, dual-plane, mesh, ladder
+		findParams[16]	= t->name.find("NDMC_");   // No subdivision, dual-plane, mesh, climbable
+		findParams[17]	= t->name.find("ND0L_");   // No subdivision, dual-plane, opaque, ladder
+		findParams[18]	= t->name.find("ND0C_");   // No subdivision, dual plane, opaque, climbable
+		findParams[19]	= t->name.find("N0ML_");   // No subdivision, single-plane, mesh, ladder
+		findParams[20]	= t->name.find("N0MC_");   // No subdivision, single-plane, mesh, climbable
+		findParams[21]	= t->name.find("N00L_");   // No subdivision, single-plane, opaque, ladder
+		findParams[22]	= t->name.find("N00C_");   // No subdivision, single-plane, opaque, climbable
+		findParams[23]	= t->name.find("0DML_");   // Dividable, dual-plane, mesh, ladder
+		findParams[24]	= t->name.find("0DMC_");   // Dividable, dual-plane, mesh, climbable
+		findParams[25]	= t->name.find("0D0L_");   // Dividable, dual-plane, opaque, ladder
+		findParams[26]	= t->name.find("0D0C_");   // Dividable, dual plane, opaque, climbable
+		findParams[27]	= t->name.find("00ML_");   // Dividable, single-plane, mesh, ladder
+		findParams[28]	= t->name.find("00MC_");   // Dividable, single-plane, mesh, climbable
+		findParams[29]	= t->name.find("000L_");   // Dividable, single-plane, opaque, ladder
+		findParams[30]	= t->name.find("000C_");   // Dividable, single-plane, opaque, climbable
+		
 		bool found_special = false;
-		for(int i = 0; i < 15; i++)
+		for(int i = 0; i < numParams; i++)
 		{
 			if(findParams[i] == 0) 
 			{
