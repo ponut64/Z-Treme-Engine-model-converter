@@ -631,12 +631,24 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 
 void WRITE_TEXTURES(ofstream * file, animated_model_t * aModel)
 {
+	if(aModel->nbTextures == 0)
+	{
+	cout << "Warning: There's no textures!\n\n";
+	return;
+	}
     cout << "Writing the textures to binary file...\n\n";
 	int tSize;
     texture_t * t;
     for (unsigned short i=0; i<aModel->nbTextures; i++)
     {
 			t=&aModel->texture[i];
+			if(t->height == 0 || t->width == 0)
+			{
+				cout << "Found empty texture: (";
+				cout << i;
+				cout << ")\n";
+				continue;
+			}
 			writeUint16(file, 0x7F7F);
 			writeU8(file, t->height);
 			writeU8(file, t->width);
