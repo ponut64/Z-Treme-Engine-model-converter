@@ -2,7 +2,7 @@
 
     extern int ReadTGAFile (string folder, texture_t * texture);
 	extern int ReadPaletteFile (void);
-	
+
 	int		item_exception_vertices[64][4];
 	int		items[64];
 	int		item_number_package[64];
@@ -130,7 +130,7 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
                 o_PDATA->pntbl[o_PDATA->nbPoint].point[Y] = fy;
                 o_PDATA->pntbl[o_PDATA->nbPoint].point[Z] = fz;
                 o_PDATA->nbPoint++;
-				
+
 				///////////////////////////////////////////
 				// Ponut64 Addition
 				// Check if the point is larger than the previously largest number on any axis.
@@ -240,12 +240,12 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 														o_PDATA->pntbl[ptv[2]].point[Z] +
 														o_PDATA->pntbl[ptv[3]].point[Z]
 														) / 4.0;
-														
+
 				cout << "Created Item at Pos: \n";
 				cout << item_positions[number_of_items][X] << "\n ";
 				cout << item_positions[number_of_items][Y] << "\n ";
 				cout << item_positions[number_of_items][Z] << "\n ";
-														
+
 				item_exception_vertices[number_of_items][0] = ptv[0];
 				item_exception_vertices[number_of_items][1] = ptv[1];
 				item_exception_vertices[number_of_items][2] = ptv[2];
@@ -285,7 +285,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 
     texture_t * t;
 	string newname;
-	
+
 	int numDual = 0;
 	int numMesh = 0;
 	int numMedu = 0;
@@ -297,7 +297,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 	int numIndx = 0;
 	int numLadder = 0;
 	int numClimbable = 0;
-	
+
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
         t = &aModel->texture[i];
@@ -330,7 +330,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[12]	= t->name.find("0D00_");   // Dividable, dual plane, opaque, collision
 		findParams[13]	= t->name.find("00M0_");   // Dividable, single-plane, mesh, collision
 		findParams[14]	= t->name.find("000G_");   // Dividable, single-plane, opaque, no collision
-		
+
 		findParams[15]	= t->name.find("NDML_");   // No subdivision, dual-plane, mesh, ladder
 		findParams[16]	= t->name.find("NDMC_");   // No subdivision, dual-plane, mesh, climbable
 		findParams[17]	= t->name.find("ND0L_");   // No subdivision, dual-plane, opaque, ladder
@@ -347,53 +347,53 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[28]	= t->name.find("00MC_");   // Dividable, single-plane, mesh, climbable
 		findParams[29]	= t->name.find("000L_");   // Dividable, single-plane, opaque, ladder
 		findParams[30]	= t->name.find("000C_");   // Dividable, single-plane, opaque, climbable
-		
-		
-		
+
+
+
 		bool found_special = false;
 		for(int i = 0; i < numParams; i++)
 		{
-			if(findParams[i] == 0) 
+			if(findParams[i] == 0)
 			{
 				found_special = true;
 				break;
 			}
 		}
 
-		
+
         std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
-		
+
 		if(findSectorSpecs != std::string::npos)
 		{
 			newname = t->name;
 			newname.erase(newname.begin(), newname.end()-2);
 			newname.erase(newname.end()-1, newname.end());
-			t->GV_ATTR.first_sector_number = atoi(newname.c_str());
+			t->GV_ATTR.first_sector = atoi(newname.c_str());
 
 			newname = t->name;
 			newname.erase(newname.begin(), newname.end()-1);
 
-			t->GV_ATTR.second_sector_number = atoi(newname.c_str());
+			t->GV_ATTR.second_sector = atoi(newname.c_str());
 
 			cout << "\n " << t->name << " for this texture ";
-			cout << "\n " << (int)t->GV_ATTR.first_sector_number << " is the first sector ";
-			cout << "\n " << (int)t->GV_ATTR.second_sector_number << " is the second sector \n";
+			cout << "\n " << (int)t->GV_ATTR.first_sector << " is the first sector ";
+			cout << "\n " << (int)t->GV_ATTR.second_sector << " is the second sector \n";
 		}
-	
+
 		if(findDual == 0) //If DUAL is found at the start
 		{
 			numDual++;
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
-		
+
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		} else if(findMesh == 0)
 		{
 			numMesh++;
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
-		
+
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
@@ -401,19 +401,19 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		} else if(findMedu == 0)
 		{
 			numMedu++;
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
-		
+
 		} else if(findDark == 0)
 		{
 			numDark++;
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
-		
+
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
@@ -422,24 +422,24 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			numPort++;
 		//No SGL attr
 		//It's a portal. This is linked list information, write as if it is the last in the list.
-		t->GV_ATTR.portal_information = 254; 
-		
+		t->GV_ATTR.portal_information = 254;
+
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
 		} else if(findGost == 0)
 		{
 			numGost++;
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
-		
+
 		//In this case, the "PHYS" flag is left 0.
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		} else if(found_special == true)
 		{
-		
+
 		std::size_t findN = t->name.find("N");
 		std::size_t findD = t->name.find("D");
 		std::size_t findM = t->name.find("M");
@@ -480,16 +480,16 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			t->GV_ATTR.render_data_flags |= GV_FLAG_CLIMBABLE;
 			numClimbable++;
 		}
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
-		
+
 		} else {
-			
+
 			numNormal++;
-		
+
 		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
-		
+
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
@@ -506,9 +506,9 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.texno = stoi(newname);
 		numIndx++;
 		}
-		
+
     }
-	
+
 		cout << "\n " << numClimbable << " climbable ";
 		cout << "\n " << numLadder << " ladder ";
 		cout << "\n " << numPort << " portals ";
@@ -520,7 +520,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		cout << "\n " << numDark << " dark textures ";
 		cout << "\n " << numNdiv << " No subdivision textures ";
 		cout << "\n " << numGost << " No collision textures \n";
-		
+
 		cout << "\n " << number_of_unique_items << " unique items";
 		cout << "\n " << number_of_items << " total items \n";
 }

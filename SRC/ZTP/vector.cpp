@@ -32,12 +32,22 @@ void VecNormal(float * dest, float * a, float * b )
         dest[Z]= (buf[Z]/dist);
     }
 }
-/*
-float v3Length(vector3 a)
+
+float	v3Length(float * a)
 {
-    return sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+    return sqrt(a[X]*a[X] + a[Y]*a[Y] + a[Z]*a[Z]);
 }
 
+float	v3Dist(float * a, float * b)
+{
+	float d[XYZ];
+	d[X] = a[X] - b[X];
+	d[Y] = a[Y] - b[Y];
+	d[Z] = a[Z] - b[Z];
+	
+	return v3Length(d);
+}
+/*
 void v3CrossAndNormalize(vector3 * dest, vector3 a, vector3 b )
 {
 	//Cross product
@@ -61,8 +71,8 @@ void v3CrossAndNormalize(vector3 * dest, vector3 a, vector3 b )
         dest->y= (buf.y/dist);
         dest->z= (buf.z/dist);
     }
-}*/
-
+}
+*/
 void VecEdge(VECTOR dest, VECTOR a, VECTOR b)
 {
     /*float a[XYZ];    a[X] = toFLOAT(fa[X]);     a[Y] = toFLOAT(fa[Y]);  a[Z] = toFLOAT(fa[Z]);

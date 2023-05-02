@@ -32,6 +32,8 @@ using namespace std;
 #define CAN_JUMP (1)
 #define MAX_SPRITES             (2000)
 
+#define SUBDIVISION_SCALE (50)
+
 const float conv              = M_PI/180.0f;
 
 enum
@@ -60,19 +62,13 @@ typedef struct
 typedef struct
 {
     float point[3];
-    float color[3];
     float normal[3];
-    unsigned int normalArray;
 } vertex_t;
 
 typedef struct
 {
     unsigned int vertIdx[4];
     int texture;
-    bool dualPlane;
-    int sorting;
-    pixel_t color; //If it's a single color
-    unsigned int vdp2_effect; //Bump mapping?
     float normal[3];
 } polygon_t;
 
@@ -89,16 +85,6 @@ typedef struct
     vertex_t * cVert;  //Uncompressed for now // ???
     float * cNorm[3]; //Will probably stay unused // ???
 }key_frame_t;
-
-typedef struct {
-    uint8_t	     flag ;
-    uint8_t	     sorting ;
-    uint16_t	 texno ;
-    uint16_t	 atrb ;
-    uint16_t	 colno ;
-    uint16_t	 gstb ;
-    uint16_t	 dir ;
-} ATTR ;
 
 //What will *I* need, in my attribute data?
 // 1 -> Dual or single plane flag
@@ -139,13 +125,26 @@ Portal information:
 Polygon ID of the next portal. 
 If it is 255, this polygon is not a portal.
 If it is 254, this is the last portal.
+
+Plane information:
+Information about the scale and subdivision rules of the plane.
+0-1: First subdivision rule
+2-3: Second subdivision rule
+4-5: Third subdivision rule
+5-6: Fourth subdivision rule, if applicable
+7-8: Plane texture scaling type (tiled 1xy, coordinate y tile x, coordinate x tile y, full coordinates)
 */
+
+	#define SUBDIVIDE_W		(1)
+	#define SUBDIVIDE_H		(2)
+	#define SUBDIVIDE_HV	(3)
 
 typedef struct {
 	uint16_t render_data_flags;
-	uint16_t portal_information;
-	uint8_t first_sector_number;
-	uint8_t second_sector_number;
+	uint8_t plane_information;
+	uint8_t portal_information;
+	uint8_t first_sector;
+	uint8_t second_sector;
 	uint16_t texno;
 } gvAtr;
 
@@ -158,10 +157,7 @@ typedef struct
     unsigned int    textureId;
     int             paletteIdx;
     pixel_t *       pixel;
-    uint16_t        clut[16];
     uint8_t         nbFrames;
-    char			attribute;
-    ATTR            SGL_ATTR; //For SGL mainly, can be converted for ZTE format
 	gvAtr			GV_ATTR; //For my stupid single-use format
 } texture_t;
 
@@ -203,6 +199,7 @@ uint32_t        swap_endian_uint(uint32_t value);
 int32_t         swap_endian_sint( int32_t value);
 
 /**Functions**/
+float	v3Dist(float * a, float * b);
 float dotProduct(float * vct1, float * vct2);
 animated_model_t * loading(void);
 

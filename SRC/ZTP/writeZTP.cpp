@@ -32,7 +32,7 @@ Model data header
 14-15 byte: x_radius
 16-17 byte: y_radius
 18-19 byte: z_radius
-20 byte: polygon # of the first portal 
+20 byte: polygon # of the first portal
 21-23 byte: padding.
 */
 void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
@@ -44,7 +44,7 @@ void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
     countSize=0;
     for (uint32_t i = 0; i<aModel->nbModels; i++) {
             countSize += aModel->model[i].nbPolygon * 20 ; //Each polygon = 20 bytes [12 bytes normal, 8 bytes vertices ID]
-            countSize += aModel->model[i].nbPoint * 12; //Each vertice = 4 bytes for each component x,y,z 
+            countSize += aModel->model[i].nbPoint * 12; //Each vertice = 4 bytes for each component x,y,z
     }
 
         countSize += (aModel->nbFrames * aModel->model[0].nbPoint * 7); //Each compressed vertex is a sint16_t[3] + compressed normal, 1 byte
@@ -80,14 +80,14 @@ void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 			}
         }
 	writeUint32(file, (unsigned int)first_portal_written_to_header);
-	
+
 	if(first_portal_written_to_header == 255)
 	{
 	cout << "\n Mesh had no portals. ";
 	} else {
-	cout << "\n First portal: " << (unsigned int)first_portal_written_to_header << " \n"; 
+	cout << "\n First portal: " << (unsigned int)first_portal_written_to_header << " \n";
 	}
-	
+
 }
 
 void	crossf(float vector1[3], float vector2[3], float output[3])
@@ -115,7 +115,7 @@ float	fdot(float vec1[3], float vec2[3])
 		float tempVert[3] = {0, 0, 0};
 		short tempID = 0;
 		int flipcnt = 0;
-		
+
 			if(reverse != true)
 				{
 		while(verts[0][component] < 0)
@@ -123,29 +123,29 @@ float	fdot(float vec1[3], float vec2[3])
 				tempVert[0]	= verts[0][0];
 				tempVert[1]	= verts[0][1];
 				tempVert[2]	= verts[0][2];
-				
+
 				verts[0][0]	= verts[1][0];
 				verts[0][1]	= verts[1][1];
 				verts[0][2]	= verts[1][2];
-				
+
 				verts[1][0]	= verts[2][0];
 				verts[1][1]	= verts[2][1];
 				verts[1][2]	= verts[2][2];
-				
+
 				verts[2][0]	= verts[3][0];
 				verts[2][1]	= verts[3][1];
 				verts[2][2]	= verts[3][2];
-				
+
 				verts[3][0]	= tempVert[0];
 				verts[3][1]	= tempVert[1];
 				verts[3][2]	= tempVert[2];
-				
+
 				tempID	= vIDs[0];
 				vIDs[0]	= vIDs[1];
 				vIDs[1]	= vIDs[2];
 				vIDs[2]	= vIDs[3];
 				vIDs[3]	= tempID;
-				
+
 				flipcnt++;
 			}
 				} else {
@@ -154,34 +154,34 @@ float	fdot(float vec1[3], float vec2[3])
 				tempVert[0]	= verts[0][0];
 				tempVert[1]	= verts[0][1];
 				tempVert[2]	= verts[0][2];
-				
+
 				verts[0][0]	= verts[1][0];
 				verts[0][1]	= verts[1][1];
 				verts[0][2]	= verts[1][2];
-				
+
 				verts[1][0]	= verts[2][0];
 				verts[1][1]	= verts[2][1];
 				verts[1][2]	= verts[2][2];
-				
+
 				verts[2][0]	= verts[3][0];
 				verts[2][1]	= verts[3][1];
 				verts[2][2]	= verts[3][2];
-				
+
 				verts[3][0]	= tempVert[0];
 				verts[3][1]	= tempVert[1];
 				verts[3][2]	= tempVert[2];
-				
+
 				tempID	= vIDs[0];
 				vIDs[0]	= vIDs[1];
 				vIDs[1]	= vIDs[2];
 				vIDs[2]	= vIDs[3];
 				vIDs[3]	= tempID;
-				
+
 				flipcnt++;
 			}
 				}
 	}
-	
+
 	void	permutate(float verts[4][3], short * vIDs) //counter-clockwise
 	{
 	float tempVert[3] = {0, 0, 0};
@@ -189,43 +189,43 @@ float	fdot(float vec1[3], float vec2[3])
 				tempVert[0]	= verts[0][0];
 				tempVert[1]	= verts[0][1];
 				tempVert[2]	= verts[0][2];
-				
+
 				verts[0][0]	= verts[1][0];
 				verts[0][1]	= verts[1][1];
 				verts[0][2]	= verts[1][2];
-				
+
 				verts[1][0]	= verts[2][0];
 				verts[1][1]	= verts[2][1];
 				verts[1][2]	= verts[2][2];
-				
+
 				verts[2][0]	= verts[3][0];
 				verts[2][1]	= verts[3][1];
 				verts[2][2]	= verts[3][2];
-				
+
 				verts[3][0]	= tempVert[0];
 				verts[3][1]	= tempVert[1];
 				verts[3][2]	= tempVert[2];
-				
+
 				tempID	= vIDs[0];
 				vIDs[0]	= vIDs[1];
 				vIDs[1]	= vIDs[2];
 				vIDs[2]	= vIDs[3];
 				vIDs[3]	= tempID;
 	}
-	
+
 
 void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 {
 	short vIDs[4] = {0, 0, 0, 0};
 	float verts[4][3];
 	float center[3] = {0, 0, 0};
-		
+
 		//Load vertice IDs
 		vIDs[0] = poly->vertIdx[0];
 		vIDs[1] = poly->vertIdx[1];
 		vIDs[2] = poly->vertIdx[2];
 		vIDs[3] = poly->vertIdx[3];
-		
+
 		//Load vertices
 		for(int l = 0; l < 4; l++)
 		{
@@ -240,7 +240,7 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 		//Get center
 		center[X] = center[X] / 4.0;
 		center[Y] = center[Y] / 4.0;
-		center[Z] = center[Z] / 4.0;	
+		center[Z] = center[Z] / 4.0;
 		//Center vertices to themselves
 		for(int h = 0; h < 4; h++)
 		{
@@ -249,63 +249,63 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 		verts[h][Z] -= center[Z];
 		fnormalize(verts[h]);
 		}
-		
+
 		/*
 		OPERATING THEORY
-		
+
 		You're putting into this loop soup for a polygon.
 		It is a properly facing order of vertices, in terms of its normal and facing towards the near plane,
 		but the direction the texture will draw is random.
-		
+
 		You want to force the textures to all draw with a particular visual orientation.
 		To accomplish this, you first have to re-order the soup so vertice 0 of the polygon is in a known visual location.
 		We will target "on the left" as the orientation of vertice 0.
-		
+
 		In theoretical terms, this is based on a screenspace transformation of the vertices in a given orientation.
 		Our orientation screenspace Y being as close to the texture's Y axis as we can get it.
 		But we will use a shortcut!
-		
+
 		The polygon's normal can be used to find out which axis the polygon most faces.
 		The axis the polygon most faces is the axis we want to align it to.
 		We also want to bias two axis. If we equally treat all three,
 		the dominant axis (Y) will interfere with the alignment of the others on steep slopes.
-		
+
 		Take this alignment, for example:
-		
+
 				y-
-		
+
 			z+		1
-			 0		
+			 0
 		x+		O		x-
 					2
 				3	z-
-		
+
 				y+
-		
+
 		That's probably not a good graphic, but 0 and 3 are supposed to be equially distant from origin in Z,
 		but also have a large gap in Y and X. 1 and 2 don't vary much in X, but vary a lot in Y and Z.
 		It's an ambiguous shape: It could align Y, or X.
 		We would prefer X unless it is supremely dominant in Y to the point where no other axis is useful.
-		
+
 		The shortcut, then, is that the dominant axis of a normal is the axis in which is decimated when forcing the orientation.
-		If it is dominant Z, the Z value of the vertices is not useful. 
+		If it is dominant Z, the Z value of the vertices is not useful.
 		However, we do need to know if it is dominant in -Z or +Z.
 		This is because looking at +Z puts X+ on the left. Looking at -Z puts X+ on the right.
 		When we want to put vertice 0 "on the left", this is important.
 		So if the normal's dominant axis is + or -, that determines if we want a positive second axis or a negative second axis.
-		
+
 		The sorting axis is never Y because Y is the overall dominant axis.
 		The Y bias will be the same between X+ and Z+. When you let the dominant axis dominate the sorting,
 		you get sorting relative to views from the dominant axis, which is ambiguous when viewing from X or Z projections.
-		
+
 		However, there are edge-cases where the dominant axis must be consulted wherein the shape of the polygon
 		is ambiguous due to overlaps of vertice 1, 3, or 0 on the Y axis.
-		
+
 		When we know where vertice 0 is, we can either leave that as the orientation..
 		or permutate the polygon a couple more times to get the desired orientation.
-		
+
 		*/
-		
+
 			if(fabs(poly->normal[Y]) > 0.97 && poly->normal[Y] > 0)
 			{
 
@@ -313,26 +313,26 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, false);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 				} else if(verts[0][X] > 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, true);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 				}
-				
-				
+
+
 			} else if(fabs(poly->normal[Y]) > 0.97 && poly->normal[Y] < 0){
 
 				if(verts[0][X] < 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, false);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
@@ -340,10 +340,10 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, true);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 				}
-				
+
 		} else if(fabs(poly->normal[X]) >= fabs(poly->normal[Z]) && fabs(poly->normal[Y]) < fabs(poly->normal[X]))
 		{
 			if(poly->normal[X] >= 0)
@@ -353,18 +353,18 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 2, false);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 				} else if(verts[0][Z] > 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 2, true);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 				}
-				
+
 				////////////////////////////////////////////
 				//Post-mutation of ambiguous polygonm shapes
 				////////////////////////////////////////////
@@ -390,20 +390,20 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				so far..	1y < 03y
 							2y < 01y
 						y-
-					   2			
+					   2
 					   1
 				z-		 03		z+
 						y+
 				3 = 0 or 3 ~ 0 or 3 != 0 or 3 !~ 0, it doesn't matter.
 				This particular odd solution is documented because it's not intuitive.
 				*/
-			
+
 			} else {
 				if(verts[0][Z] < 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 2, false);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
@@ -411,10 +411,10 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 2, true);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 				}
-				
+
 				////////////////////////////////////////////
 				//Post-mutation of ambiguous polygonm shapes
 				////////////////////////////////////////////
@@ -436,17 +436,17 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 					//
 				}
 				////////////////////////////////////////////
-	
+
 			}
 		} else {
 			if(poly->normal[Z] >= 0)
 			{
-					
+
 				if(verts[0][X] < 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, false);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
@@ -454,10 +454,10 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, true);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 				}
-				
+
 				////////////////////////////////////////////
 				//Post-mutation of ambiguous polygonm shapes
 				////////////////////////////////////////////
@@ -479,25 +479,25 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 					//
 				}
 				////////////////////////////////////////////
-					
+
 			} else {
-					
+
 				if(verts[0][X] < 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, false);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 				} else if(verts[0][X] > 0)
 				{
 					//
 					rotate_by_rule(verts, vIDs, 0, true);
-					//Pre-mutation to decided alignment 
+					//Pre-mutation to decided alignment
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 					permutate(verts, vIDs);
 				}
-				
+
 				////////////////////////////////////////////
 				//Post-mutation of ambiguous polygonm shapes
 				////////////////////////////////////////////
@@ -521,8 +521,8 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 				////////////////////////////////////////////
 
 			}
-		} 
-		
+		}
+
 		//Cleanup
 		center[X] = 0;
 		center[Y] = 0;
@@ -533,7 +533,7 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 		//In this program, we unflip the textures (so they are read in as top-left origin).
 		permutate(verts, vIDs);
 		permutate(verts, vIDs);
-		
+
 		////////////////////////////////////////////
 		//	Triangle Handling
 		//	Rather than help with the texture directions, triangles are always oriented such that vertex 2 == vertex 3.
@@ -545,29 +545,88 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 					permutate(verts, vIDs);
 				}while(vIDs[2] != vIDs[3]);
 			}
-		
+
 		//Write vertice IDs
 			poly->vertIdx[0] = vIDs[0];
 			poly->vertIdx[1] = vIDs[1];
 			poly->vertIdx[2] = vIDs[2];
 			poly->vertIdx[3] = vIDs[3];
-			
 
-		
-		
-		
+
+
+
+
 }
+
+unsigned char	get_plane_information(model_t * mesh, int poly_index)
+{
+	static int subdivision_rules[4] = {0, 0, 0, 0};
+
+		float * pl_pt0 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[0]].point;
+		float * pl_pt1 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[1]].point;
+		float * pl_pt2 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[2]].point;
+		float * pl_pt3 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[3]].point;
+								
+		int len01 = v3Dist(pl_pt0, pl_pt1);
+		int len12 = v3Dist(pl_pt1, pl_pt2);
+		int len23 = v3Dist(pl_pt2, pl_pt3);
+		int len30 = v3Dist(pl_pt3, pl_pt0);
+		int perimeter = len01 + len12 + len23 + len30;
+
+		int len_w = max(len01, len23); 
+		int len_h = max(len12, len30);
+	
+		subdivision_rules[0] = 0;
+		subdivision_rules[1] = 0;
+		subdivision_rules[2] = 0;
+		subdivision_rules[3] = (perimeter > 1200) ? 1 : 0;
+	
+			if(len_w >= SUBDIVISION_SCALE)
+			{
+				subdivision_rules[0] = SUBDIVIDE_W;
+			}
+			if(len_w >= SUBDIVISION_SCALE<<1)
+			{
+				subdivision_rules[1] = SUBDIVIDE_W;
+			}
+			if(len_w >= SUBDIVISION_SCALE<<2)
+			{
+				subdivision_rules[2] = SUBDIVIDE_W;
+			}
+			
+			if(len_h >= SUBDIVISION_SCALE)
+			{
+				subdivision_rules[0] = (subdivision_rules[0] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
+			}
+			if(len_h >= SUBDIVISION_SCALE<<1)
+			{
+				subdivision_rules[1] = (subdivision_rules[1] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
+			}
+			if(len_w >= SUBDIVISION_SCALE<<2)
+			{
+				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
+			}
+			unsigned char subrules = subdivision_rules[0];
+			subrules |= subdivision_rules[1]<<2;
+			subrules |= subdivision_rules[2]<<4;
+			subrules |= subdivision_rules[3]<<6;
+			return subrules;
+	
+}
+		
 
 /*****
 FOR SGL (mainly for you Ponut64!) : This writes all the PDATA in a sequential order
 *****/
 void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 {
-	
+
 	uint16_t first_portal = 254;
-	
+	static unsigned char plane_information = 0;
     for (unsigned int i=0; i<aModel->nbModels; i++){
+		//////////////////////////////////////////////////////////////////
         //PDATA, including buffers for the pointers
+		//////////////////////////////////////////////////////////////////
         writeUint32(file, 0); //Empty 4-byte area for the PNTBL pointer [verts]
         writeUint32(file, aModel->model[i].nbPoint); //# of point
         writeUint32(file, 0); //Empty 4-byte area for the PLTBL pointer [polys]
@@ -575,18 +634,25 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 		writeUint32(file, 0); //Empty 4-byte area for the ATTBL pointer [attributes]
        //Written type is PDATA, there are no per-vertice normals.
 
+		//////////////////////////////////////////////////////////////////
         //POINT, 12 bytes each
+		// "pntbl"
+		//////////////////////////////////////////////////////////////////
         for (unsigned int ii=0; ii<aModel->model[i].nbPoint; ii++) {
             for (unsigned int j=0; j<3; j++) {
                 writeSint32(file,toFIXED(aModel->model[i].pntbl[ii].point[j]));
             }
         }
-		
+
+
+		//////////////////////////////////////////////////////////////////
         //POLYGON, 12 bytes for normals and 8 bytes for vertices
+		// "pltbl"
+		//////////////////////////////////////////////////////////////////
         for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) {
-		
+
 			//spesh[ii] = 0;
-			
+
 			poly_face_sort(&aModel->model[i].pltbl[ii], &aModel->model[i].pntbl[0]);
 
             //Normals
@@ -598,34 +664,31 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
                 writeUint16(file, aModel->model[i].pltbl[ii].vertIdx[j]);
             }
         }
+		//////////////////////////////////////////////////////////////////
         //ATTR, 12 bytes each // 8 bytes: 2, 2, 1, 1, 2
+		// "attbl"
+		//////////////////////////////////////////////////////////////////
         for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
         {
-            // file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.flag, sizeof(uint8_t));
-            // file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.sorting, sizeof(uint8_t));
-            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.texno);
-            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.atrb);
-            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.colno);
-            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.gstb);
-            // writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].SGL_ATTR.dir);
 
-			//file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags, sizeof(uint8_t));
 			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags);
+
+			plane_information = get_plane_information(aModel->model, ii);
+            file->write((char*)&plane_information, sizeof(uint8_t));
+			//cout << (int)plane_information << "\n";
 			if(aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information == 254)
 			{
-			//file->write((char*)&first_portal, sizeof(uint8_t));
-			writeUint16(file, first_portal);
+			file->write((char*)&first_portal, sizeof(uint8_t));
 			first_portal = ii;
 			} else {
-			//file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information, sizeof(uint8_t));
-			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information);
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information, sizeof(uint8_t));
 			}
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector_number, sizeof(uint8_t));
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector_number, sizeof(uint8_t));
+			
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector, sizeof(uint8_t));
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector, sizeof(uint8_t));
 			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.texno);
-        }
-
-    }
+		}
+	}
 
 }
 
@@ -801,9 +864,9 @@ void write_model_binary(ofstream * file, animated_model_t * aModel)
         for (unsigned int i=0; i<aModel->nbModels; i++)
         aModel->model[i].pntbl = v[i];
     }
-	
+
     WRITE_TEXTURES(file, aModel);
-	
+
 	////////////////////////////////////////////
 	// Ponut64 Addition
 	// Write item data
