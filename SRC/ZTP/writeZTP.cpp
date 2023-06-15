@@ -24,39 +24,14 @@ Model data header
 ********************* IT WILL CRASH IF IT ISN'T!*********************
 ********************* IT WILL CRASH IF IT ISN'T!*********************
 
-0-1 byte: # of meshes
-2-3 byte: # of textures
-4-7 byte: total size of PDATA + compressed verts [rather, offset to end of]
-8-11 byte: total size of textures [rather, offset to end of]
-12-13 byte: # of keyframes
-14-15 byte: x_radius
-16-17 byte: y_radius
-18-19 byte: z_radius
-20 byte: polygon # of the first portal
-21-23 byte: padding.
+0-3 byte: # of keyframes
+4-5 byte: x_radius
+6-7 byte: y_radius
+8-9 byte: z_radius
+10-13 byte: polygon # of the first portal
 */
 void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
 {
-    writeUint16(file, aModel->nbModels);
-    writeUint16(file, aModel->nbTextures);
-
-    uint32_t countSize = 0;
-    countSize=0;
-    for (uint32_t i = 0; i<aModel->nbModels; i++) {
-            countSize += aModel->model[i].nbPolygon * 20 ; //Each polygon = 20 bytes [12 bytes normal, 8 bytes vertices ID]
-            countSize += aModel->model[i].nbPoint * 12; //Each vertice = 4 bytes for each component x,y,z
-    }
-
-        countSize += (aModel->nbFrames * aModel->model[0].nbPoint * 7); //Each compressed vertex is a sint16_t[3] + compressed normal, 1 byte
-        writeUint32(file, countSize);
-
-
-    for (uint32_t i = 0; i<aModel->nbTextures; i++) {
-        countSize += (aModel->texture[i].height * aModel->texture[i].width); //At this point, you would denote a size change for depth.
-    }
-    writeUint32(file, countSize);
-
-    countSize=0;
 
     cout << "\n";
 	cout << "X radius: " << aModel->x_radius << "\n";
@@ -616,23 +591,25 @@ unsigned char	get_plane_information(model_t * mesh, int poly_index)
 		
 
 /*****
-FOR SGL (mainly for you Ponut64!) : This writes all the PDATA in a sequential order
+Writes GVPLY data
+Pretty ugly; I generate the data whilst writing it.
 *****/
-void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
+void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 {
 
 	uint16_t first_portal = 254;
 	static unsigned char plane_information = 0;
     for (unsigned int i=0; i<aModel->nbModels; i++){
 		//////////////////////////////////////////////////////////////////
-        //PDATA, including buffers for the pointers
+        //GVPLY, including buffers for the pointers
 		//////////////////////////////////////////////////////////////////
-        writeUint32(file, 0); //Empty 4-byte area for the PNTBL pointer [verts]
         writeUint32(file, aModel->model[i].nbPoint); //# of point
-        writeUint32(file, 0); //Empty 4-byte area for the PLTBL pointer [polys]
         writeUint32(file, aModel->model[i].nbPolygon); //# of poly
+        writeUint32(file, 0); //Empty 4-byte area for the PNTBL pointer [verts]
+        writeUint32(file, 0); //Empty 4-byte area for the PLTBL pointer [polys]
+		writeUint32(file, 0); //Empty 4-byte area for the NMTBL pointer [normals]
+		writeUint32(file, 0); //Empty 4-byte area for the MAXTBL pointer [major axis]
 		writeUint32(file, 0); //Empty 4-byte area for the ATTBL pointer [attributes]
-       //Written type is PDATA, there are no per-vertice normals.
 
 		//////////////////////////////////////////////////////////////////
         //POINT, 12 bytes each
@@ -646,26 +623,65 @@ void WRITE_SGL_PDATA(ofstream * file, animated_model_t * aModel)
 
 
 		//////////////////////////////////////////////////////////////////
-        //POLYGON, 12 bytes for normals and 8 bytes for vertices
+        //POLYGON, 8 bytes for the vertices
 		// "pltbl"
 		//////////////////////////////////////////////////////////////////
-        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) {
-
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) 
+		{
 			//spesh[ii] = 0;
 
 			poly_face_sort(&aModel->model[i].pltbl[ii], &aModel->model[i].pntbl[0]);
 
-            //Normals
-            for (unsigned int j=0; j<3; j++) {
-                writeSint32(file, toFIXED(aModel->model[i].pltbl[ii].normal[j]));
-            }
             //Vertices //Vertice index, e.g. a polygon points to vertices 16, 21, 17, 20.
             for (unsigned int j=0; j<4; j++) {
                 writeUint16(file, aModel->model[i].pltbl[ii].vertIdx[j]);
             }
         }
+		
+		
 		//////////////////////////////////////////////////////////////////
-        //ATTR, 12 bytes each // 8 bytes: 2, 2, 1, 1, 2
+        //NORMALS for POLYGONS, 12 bytes for 32-bit normal
+		// "nmtbl"
+		//////////////////////////////////////////////////////////////////
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) 
+		{
+            for (unsigned int j=0; j<3; j++) 
+			{
+                writeSint32(file, toFIXED(aModel->model[i].pltbl[ii].normal[j]));
+			}
+		}
+		
+		//////////////////////////////////////////////////////////////////
+        //MAJOR AXIS for POLYGONS. Optimization shortcut for collision.
+		// "maxtbl"
+		//////////////////////////////////////////////////////////////////
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) 
+		{
+			float abs_normal[3] = {fabs(aModel->model[i].pltbl[ii].normal[0]),
+			fabs(aModel->model[i].pltbl[ii].normal[1]),
+			fabs(aModel->model[i].pltbl[ii].normal[2])};
+            
+			float max_axis = 0;
+			uint8_t axis_id = 0;
+			if(abs_normal[1] >= abs_normal[0])
+			{
+				max_axis = abs_normal[1];
+				axis_id = (aModel->model[i].pltbl[ii].normal[1] >= 0) ? N_Yp : N_Yn;
+			} else {
+				max_axis = abs_normal[0];
+				axis_id = (aModel->model[i].pltbl[ii].normal[0] >= 0) ? N_Xp : N_Xn;
+			}
+			if(abs_normal[2] > max_axis)
+			{
+				max_axis = abs_normal[2];
+				axis_id = (aModel->model[i].pltbl[ii].normal[2] >= 0) ? N_Zp : N_Zn;
+			}
+			
+			file->write((char*)&axis_id, sizeof(uint8_t));
+		}
+		
+		//////////////////////////////////////////////////////////////////
+        //ATTR, many bytes each, changes month to month tbh
 		// "attbl"
 		//////////////////////////////////////////////////////////////////
         for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
@@ -832,16 +848,16 @@ void	write_item_data(ofstream * file, animated_model_t * aModel)
 WRITTEN ORDER:
  **Ponut64 Modified**
 FIRST: HEADER
-SECOND: PDATA
+SECOND: GVDATA
 THIRD: ANIMATION DATA, IF PRESENT
-FOURTH: TEXTURES
+FOURTH: TEXTURES, IF PRESENT
 FINALLY: ITEM DATA, IF PRESENT
 *********************************/
 void write_model_binary(ofstream * file, animated_model_t * aModel)
 {
 
     WRITE_MDATA(file, aModel);
-	WRITE_SGL_PDATA(file, aModel);
+	WRITE_GVPLY(file, aModel);
 
 	//Making duplicate base data array of the model's vertices data
     vertex_t * v[aModel->nbModels];

@@ -32,7 +32,7 @@ using namespace std;
 #define CAN_JUMP (1)
 #define MAX_SPRITES             (2000)
 
-#define SUBDIVISION_SCALE (50)
+#define SUBDIVISION_SCALE (40)
 
 const float conv              = M_PI/180.0f;
 
@@ -99,13 +99,14 @@ Render data flags:
 	
 	Byte 1 of render_data_flags:
 	|	0		|	1		|	2		|	3		|	4	-	5 	|	6	-	7 |		
-	  Dual-plane	Mesh		-			MSB On		Tex. flip	  Sorting rule
+	  Dual-plane	Mesh	 Polyline		MSB On		Tex. flip	  Sorting rule
 	Byte 2 of render_data_flags:
 	|	8		|	9		|	10		|	11		|	12	-	13 	|	14	-	15 |		
 	Subdivision	  Collision		Ladder	Climbable			 
 */
 	#define GV_FLAG_SINGLE		(0x1) // Zero, dual-plane. One, single-plane.
 	#define GV_FLAG_MESH		(0x2) // Zero, no mesh. One, mesh.
+	#define GV_FLAG_POLYLINE	(0x4) // Zero, normal polygon. One, draws with polyline. Could be somewhere else.
 	#define GV_FLAG_DARK		(0x8) // Zero, normal light. One, MSB is enabled, making the polygon dark.
 	#define GV_FLAG_NDIV		(0x100) // Zero, polygon can subdivide (in supported objects). One, no subdivision.
 	#define GV_FLAG_PHYS		(0x200) // Zero, physical plane (in supported objects). One, no collision with plane.
@@ -120,6 +121,7 @@ Render data flags:
 	#define GET_SORT_DATA(n)	(n & 0xC0)
 	#define GET_FLIP_DATA(n)	(n & 0x30)
 	
+
 /*
 Portal information:
 Polygon ID of the next portal. 
@@ -131,8 +133,7 @@ Information about the scale and subdivision rules of the plane.
 0-1: First subdivision rule
 2-3: Second subdivision rule
 4-5: Third subdivision rule
-5-6: Fourth subdivision rule, if applicable
-7-8: Plane texture scaling type (tiled 1xy, coordinate y tile x, coordinate x tile y, full coordinates)
+6-7: ???
 */
 
 	#define SUBDIVIDE_W		(1)
@@ -147,6 +148,32 @@ typedef struct {
 	uint8_t second_sector;
 	uint16_t texno;
 } gvAtr;
+
+//Struct which stores the vertex indexes of a polygon
+//The entries here are for the pntbl array.
+typedef struct {
+	uint16_t vertices[4];
+} _quad;
+
+typedef struct {
+    uint32_t nbPoint;	/* Number of vertices */
+    uint32_t nbPolygon;	/* Number of polygons */
+    POINT *		pntbl;		/* Vertex position data table */
+    _quad *		pltbl;		/* Polygon definition table */
+	POINT *		nmtbl;		/* Normal definition table */
+	uint8_t *	maxtbl;		/* Major axis table */
+    gvAtr *		attbl;		/* The attribute table for the polygon */
+} GVPLY;
+
+//////////////////////////////////
+//	Numerical Normal ID Shorthands
+//////////////////////////////////
+#define N_Xp (0)
+#define N_Xn (1)
+#define N_Yp (2)
+#define N_Yn (3)
+#define N_Zp (4)
+#define N_Zn (5)
 
 typedef struct
 {
