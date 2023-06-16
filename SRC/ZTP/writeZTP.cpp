@@ -680,6 +680,16 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 			file->write((char*)&axis_id, sizeof(uint8_t));
 		}
 		
+		//We just wrote a bunch of single bytes.
+		//This amount of single bytes could be odd, which would throw off the alignment.
+		//We don't need to be four-bytes aligned, only two past this point. For now.
+		//So if we wrote an odd number of bytes for an odd number of polygons, write an extra byte to align it.
+		//The model loader needs to also be aware of this extra byte.
+		if(aModel->model[i].nbPolygon & 1)
+		{
+			file->write((char*)&i, sizeof(uint8_t));
+		}
+		
 		//////////////////////////////////////////////////////////////////
         //ATTR, many bytes each, changes month to month tbh
 		// "attbl"
