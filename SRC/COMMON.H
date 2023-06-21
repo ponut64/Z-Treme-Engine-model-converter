@@ -32,7 +32,7 @@ using namespace std;
 #define CAN_JUMP (1)
 #define MAX_SPRITES             (2000)
 
-#define SUBDIVISION_SCALE (40)
+#define SUBDIVISION_SCALE (50)
 
 const float conv              = M_PI/180.0f;
 
