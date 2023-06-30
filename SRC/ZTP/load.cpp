@@ -309,49 +309,85 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
         std::size_t findMesh = t->name.find("MESH_");  //Mesh polys
         std::size_t findMedu = t->name.find("MEDU_");  //Mesh + dual plane polys
         std::size_t findDark = t->name.find("DARK_");  //Dark polys
-        std::size_t findPort = t->name.find("PORT_");  // Portal-defining polygon
+        std::size_t findPort = t->name.find("PORT_");  // Invisible portal-defining polygon
+        std::size_t findOccl = t->name.find("OCCL_");  // Invisible occluder-defining polygon
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
 		//// Starting to get whacky
-		int numParams = 31;
-		std::size_t findParams[numParams];		// Also textures whose names will be texture ID numbers, not file names
-		findParams[0]	= t->name.find("NDMG_");   // No subdivision, dual-plane, mesh, no collision
-		findParams[1]	= t->name.find("NDM0_");   // No subdivision, dual-plane, mesh, colllision
-		findParams[2]	= t->name.find("ND0G_");   // No subdivision, dual-plane, opaque, no collision
-		findParams[3]	= t->name.find("N0MG_");   // No subdivision, single-plane, mesh, no collision
-		findParams[4]	= t->name.find("ND00_");   // No subdivision, dual plane, opaque, collision
-		findParams[5]	= t->name.find("N0M0_");   // No subdivision, single-plane, mesh, collision
-		findParams[6]	= t->name.find("N00G_");   // No subdivision, single-plane, opaque, no collision
-		findParams[7]	= t->name.find("N000_");   // No subdivision, single-plane, opaque, collision
-		findParams[8]	= t->name.find("0DMG_");   // Dividable, dual-plane, mesh, no collision
-		findParams[9]	= t->name.find("0DM0_");   // Dividable, dual-plane, mesh, colllision
-		findParams[10]	= t->name.find("0D0G_");   // Dividable, dual-plane, opaque, no collision
-		findParams[11]	= t->name.find("00MG_");   // Dividable, single-plane, mesh, no collision
-		findParams[12]	= t->name.find("0D00_");   // Dividable, dual plane, opaque, collision
-		findParams[13]	= t->name.find("00M0_");   // Dividable, single-plane, mesh, collision
-		findParams[14]	= t->name.find("000G_");   // Dividable, single-plane, opaque, no collision
+		int np = 0;
+		std::size_t findParams[256];		// Also textures whose names will be texture ID numbers, not file names
+		//Non-portals
+		findParams[np++]	= t->name.find("NDMG0_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("NDM00_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("ND0G0_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N0MG0_");   // No subdivision, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ND000_");   // No subdivision, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("N0M00_");   // No subdivision, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("N00G0_");   // No subdivision, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N0000_");   // No subdivision, single-plane, opaque, collision
+		findParams[np++]	= t->name.find("0DMG0_");   // Dividable, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0DM00_");   // Dividable, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("0D0G0_");   // Dividable, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("00MG0_");   // Dividable, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0D000_");   // Dividable, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("00M00_");   // Dividable, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("000G0_");   // Dividable, single-plane, opaque, no collision
 
-		findParams[15]	= t->name.find("NDML_");   // No subdivision, dual-plane, mesh, ladder
-		findParams[16]	= t->name.find("NDMC_");   // No subdivision, dual-plane, mesh, climbable
-		findParams[17]	= t->name.find("ND0L_");   // No subdivision, dual-plane, opaque, ladder
-		findParams[18]	= t->name.find("ND0C_");   // No subdivision, dual plane, opaque, climbable
-		findParams[19]	= t->name.find("N0ML_");   // No subdivision, single-plane, mesh, ladder
-		findParams[20]	= t->name.find("N0MC_");   // No subdivision, single-plane, mesh, climbable
-		findParams[21]	= t->name.find("N00L_");   // No subdivision, single-plane, opaque, ladder
-		findParams[22]	= t->name.find("N00C_");   // No subdivision, single-plane, opaque, climbable
-		findParams[23]	= t->name.find("0DML_");   // Dividable, dual-plane, mesh, ladder
-		findParams[24]	= t->name.find("0DMC_");   // Dividable, dual-plane, mesh, climbable
-		findParams[25]	= t->name.find("0D0L_");   // Dividable, dual-plane, opaque, ladder
-		findParams[26]	= t->name.find("0D0C_");   // Dividable, dual plane, opaque, climbable
-		findParams[27]	= t->name.find("00ML_");   // Dividable, single-plane, mesh, ladder
-		findParams[28]	= t->name.find("00MC_");   // Dividable, single-plane, mesh, climbable
-		findParams[29]	= t->name.find("000L_");   // Dividable, single-plane, opaque, ladder
-		findParams[30]	= t->name.find("000C_");   // Dividable, single-plane, opaque, climbable
-
-
+		findParams[np++]	= t->name.find("NDML0_");   // No subdivision, dual-plane, mesh, ladder
+		findParams[np++]	= t->name.find("NDMC0_");   // No subdivision, dual-plane, mesh, climbable
+		findParams[np++]	= t->name.find("ND0L0_");   // No subdivision, dual-plane, opaque, ladder
+		findParams[np++]	= t->name.find("ND0C0_");   // No subdivision, dual plane, opaque, climbable
+		findParams[np++]	= t->name.find("N0ML0_");   // No subdivision, single-plane, mesh, ladder
+		findParams[np++]	= t->name.find("N0MC0_");   // No subdivision, single-plane, mesh, climbable
+		findParams[np++]	= t->name.find("N00L0_");   // No subdivision, single-plane, opaque, ladder
+		findParams[np++]	= t->name.find("N00C0_");   // No subdivision, single-plane, opaque, climbable
+		findParams[np++]	= t->name.find("0DML0_");   // Dividable, dual-plane, mesh, ladder
+		findParams[np++]	= t->name.find("0DMC0_");   // Dividable, dual-plane, mesh, climbable
+		findParams[np++]	= t->name.find("0D0L0_");   // Dividable, dual-plane, opaque, ladder
+		findParams[np++]	= t->name.find("0D0C0_");   // Dividable, dual plane, opaque, climbable
+		findParams[np++]	= t->name.find("00ML0_");   // Dividable, single-plane, mesh, ladder
+		findParams[np++]	= t->name.find("00MC0_");   // Dividable, single-plane, mesh, climbable
+		findParams[np++]	= t->name.find("000L0_");   // Dividable, single-plane, opaque, ladder
+		findParams[np++]	= t->name.find("000C0_");   // Dividable, single-plane, opaque, climbable
+		//All of the following are portals
+		//'P' for portal for portal IN
+		findParams[np++]	= t->name.find("NDMGP_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("NDM0P_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("ND0GP_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N0MGP_");   // No subdivision, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ND00P_");   // No subdivision, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("N0M0P_");   // No subdivision, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("N00GP_");   // No subdivision, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N000P_");   // No subdivision, single-plane, opaque, collision
+		findParams[np++]	= t->name.find("0DMGP_");   // Dividable, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0DM0P_");   // Dividable, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("0D0GP_");   // Dividable, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("00MGP_");   // Dividable, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0D00P_");   // Dividable, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("00M0P_");   // Dividable, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("000GP_");   // Dividable, single-plane, opaque, no collision
+		//'O' for occluder for PORTAL OUT
+		findParams[np++]	= t->name.find("NDMGO_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("NDM0O_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("ND0GO_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N0MGO_");   // No subdivision, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ND00O_");   // No subdivision, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("N0M0O_");   // No subdivision, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("N00GO_");   // No subdivision, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N000O_");   // No subdivision, single-plane, opaque, collision
+		findParams[np++]	= t->name.find("0DMGO_");   // Dividable, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0DM0O_");   // Dividable, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("0D0GO_");   // Dividable, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("00MGO_");   // Dividable, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0D00O_");   // Dividable, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("00M0O_");   // Dividable, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("000GO_");   // Dividable, single-plane, opaque, no collision
+		
+		findParams[np++]	= t->name.find("0000O_");   // Dividable, single-plane, opaque, collision, occluder
+		findParams[np++]	= t->name.find("0000P_");   // Dividable, single-plane, opaque, collision, portal
 
 		bool found_special = false;
-		for(int i = 0; i < numParams; i++)
+		for(int i = 0; i < np; i++)
 		{
 			if(findParams[i] == 0)
 			{
@@ -388,6 +424,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		} else if(findMesh == 0)
 		{
 			numMesh++;
@@ -398,6 +435,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		} else if(findMedu == 0)
 		{
 			numMedu++;
@@ -407,6 +445,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 
 		} else if(findDark == 0)
 		{
@@ -417,6 +456,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		} else if(findPort == 0)
 		{
 			numPort++;
@@ -424,9 +464,26 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		//It's a portal. This is linked list information, write as if it is the last in the list.
 		t->GV_ATTR.portal_information = 254;
 
-		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
-		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
+
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PORT_IN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
 		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
+		//Do NOT flag visible.
+		//t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
+		
+		} else if(findOccl == 0)
+		{
+			numPort++;
+		//No SGL attr
+		//It's a portal. This is linked list information, write as if it is the last in the list.
+		t->GV_ATTR.portal_information = 254;
+
+
+		t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
+		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
+		//Do NOT flag visible.
+		//t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
+		
 		} else if(findGost == 0)
 		{
 			numGost++;
@@ -437,6 +494,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		} else if(found_special == true)
 		{
 
@@ -446,42 +504,65 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		std::size_t findG = t->name.find("G");
 		std::size_t findL = t->name.find("L");
 		std::size_t findC = t->name.find("C");
+		std::size_t findO = t->name.find("O");
+		std::size_t findP = t->name.find("P");
+
+		// In case of defining a portal which will not be displayed,
+		// the terms "PORT_" and "OCCL_" will be used for port IN and port OUT, respectively.
+		// Hitherto, everything in here, portal or not, will be displayed.
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
+
 		if(findN == 0)
-		{
+		{	//No subdivision
 			t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
 			numNdiv++;
 		}
 		if(findD == string::npos)
-		{
+		{	//Dual-plane
 			t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		} else {
 			numDual++;
 		}
 		if(findM == 2)
-		{
+		{	//Mesh
 			t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 			numMesh++;
 		}
 		if(findG == string::npos)
-		{
+		{	//Ghost / no collision
 			t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		} else {
 			numGost++;
 		}
 		if(findL == 3)
-		{
+		{	//Ladder climable plane
 			t->GV_ATTR.render_data_flags |= GV_FLAG_LADDER;
 			t->GV_ATTR.render_data_flags |= GV_FLAG_CLIMBABLE;
 			numLadder++;
 			numClimbable++;
 		}
 		if(findC == 3)
-		{
+		{	//Free climbable plane
 			t->GV_ATTR.render_data_flags |= GV_FLAG_CLIMBABLE;
 			numClimbable++;
 		}
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		if(findP == 4)
+		{ //portal IN
+			t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
+			t->GV_ATTR.render_data_flags |= GV_FLAG_PORT_IN;
+			t->GV_ATTR.portal_information = 254;
+			numPort++;
+		} else if(findO == 4)
+		{ //portal OUT (occlusion)
+			t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
+			t->GV_ATTR.portal_information = 254;
+			numPort++;
+		} else {
+			//Polygon is not a portal
+			t->GV_ATTR.portal_information = 255; 
+		}
+		
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 
 		} else {
@@ -493,18 +574,30 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
+		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		}
 
-		if(found_special != true && findIndx == string::npos && findPort == string::npos)
+		if(found_special != true && findIndx == string::npos && findPort == string::npos && findOccl == string::npos)
 		{
-		t->GV_ATTR.texno = i;
-		} else {
-        std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
-		newname = t->name;
-		if(findSectorSpecs != std::string::npos) newname.erase(newname.end()-3, newname.end());
-		newname.erase(newname.begin(), newname.begin()+5);
-		t->GV_ATTR.texno = stoi(newname);
-		numIndx++;
+			t->GV_ATTR.texno = i;
+		} else if(found_special == true)
+		{
+			//Different branch for different prefix length (6)
+			std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
+			newname = t->name;
+			if(findSectorSpecs != std::string::npos) newname.erase(newname.end()-3, newname.end());
+			newname.erase(newname.begin(), newname.begin()+6);
+			t->GV_ATTR.texno = stoi(newname);
+			numIndx++;
+		} else if(findIndx == 0 || findPort == 0 || findOccl == 0)
+		{
+			//Different branch for different prefix length (5)
+			std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
+			newname = t->name;
+			if(findSectorSpecs != std::string::npos) newname.erase(newname.end()-3, newname.end());
+			newname.erase(newname.begin(), newname.begin()+5);
+			t->GV_ATTR.texno = stoi(newname);
+			numIndx++;
 		}
 
     }
