@@ -577,7 +577,7 @@ unsigned char	get_plane_information(model_t * mesh, int poly_index)
 			{
 				subdivision_rules[1] = (subdivision_rules[1] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
 			}
-			if(len_w >= SUBDIVISION_SCALE<<2)
+			if(len_h >= SUBDIVISION_SCALE<<2)
 			{
 				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
 			}
