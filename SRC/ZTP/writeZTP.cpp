@@ -45,22 +45,22 @@ void WRITE_MDATA(ofstream * file, animated_model_t * aModel)
     writeUint16(file, aModel->y_radius);
     writeUint16(file, aModel->z_radius);
 	//Portal stuff: 2021
-	unsigned char first_portal_written_to_header = 255;
+	unsigned char first_uvid = 0;
         //ATTR, 12 bytes each // 5 bytes, in my case
         for (unsigned int ii=0; ii< aModel->model[0].nbPolygon; ii++)
         {
-			if(aModel->texture[aModel->model[0].pltbl[ii].texture].GV_ATTR.portal_information == 254)
+			if(aModel->texture[aModel->model[0].pltbl[ii].texture].GV_ATTR.uv_id != 0)
 			{
-				first_portal_written_to_header = ii;
+				first_uvid = ii;
 			}
         }
-	writeUint32(file, (unsigned int)first_portal_written_to_header);
+	writeUint32(file, (unsigned int)first_uvid);
 
-	if(first_portal_written_to_header == 255)
+	if(first_uvid == 0)
 	{
-	cout << "\n Mesh had no portals. ";
+	cout << "\n Mesh had no uvid. ";
 	} else {
-	cout << "\n First portal: " << (unsigned int)first_portal_written_to_header << " \n";
+	cout << "\n First UVID: " << (unsigned int)first_uvid << " \n";
 	}
 
 }
@@ -558,29 +558,49 @@ unsigned char	get_plane_information(model_t * mesh, int poly_index)
 	
 			if(len_w >= SUBDIVISION_SCALE)
 			{
-				subdivision_rules[0] = SUBDIVIDE_W;
+				subdivision_rules[0] = SUBDIVIDE_X;
 			}
 			if(len_w >= SUBDIVISION_SCALE<<1)
 			{
-				subdivision_rules[1] = SUBDIVIDE_W;
+				subdivision_rules[1] = SUBDIVIDE_X;
 			}
 			if(len_w >= SUBDIVISION_SCALE<<2)
 			{
-				subdivision_rules[2] = SUBDIVIDE_W;
+				subdivision_rules[2] = SUBDIVIDE_X;
 			}
 			
 			if(len_h >= SUBDIVISION_SCALE)
 			{
-				subdivision_rules[0] = (subdivision_rules[0] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
+				subdivision_rules[0] = (subdivision_rules[0] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
 			}
 			if(len_h >= SUBDIVISION_SCALE<<1)
 			{
-				subdivision_rules[1] = (subdivision_rules[1] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
+				subdivision_rules[1] = (subdivision_rules[1] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
 			}
 			if(len_h >= SUBDIVISION_SCALE<<2)
 			{
-				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_W) ? SUBDIVIDE_HV : SUBDIVIDE_H;
+				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
 			}
+			
+		//Changes order:
+		// ++* turns to *++, and +* turns to *+, and +** turns to **+
+		if(subdivision_rules[0] == SUBDIVIDE_XY && subdivision_rules[2] && subdivision_rules[2] != SUBDIVIDE_XY)
+		{
+			//If +**, turns to **+
+			//If ++*, turns to *++
+			//If +*, no change
+			subdivision_rules[0] = subdivision_rules[2];
+			subdivision_rules[2] = SUBDIVIDE_XY;
+		}
+		if(subdivision_rules[0] == SUBDIVIDE_XY && subdivision_rules[1] && subdivision_rules[1] != SUBDIVIDE_XY)
+		{
+			//If +**, prior rule will have turned to **+
+			//If ++*, prior rule will have turned to *++
+			//If +*, turns to *+
+			subdivision_rules[0] = subdivision_rules[1];
+			subdivision_rules[1] = SUBDIVIDE_XY;
+		}
+			
 			unsigned char subrules = subdivision_rules[0];
 			subrules |= subdivision_rules[1]<<2;
 			subrules |= subdivision_rules[2]<<4;
@@ -589,6 +609,78 @@ unsigned char	get_plane_information(model_t * mesh, int poly_index)
 	
 }
 		
+unsigned char	get_initial_uv_id(unsigned char subrules)
+{
+	
+		//Basic forward process:
+		// +++ = 1
+		// -++ = 2
+		// |++ = 4
+		// --+ = 6
+		// ||+ = 10
+		// --- = 14
+		// ||| = 22
+		// ++ = 30
+		// -+ = 34
+		// |+ = 42
+		// -- = 50
+		// || = 66
+		// + = 82
+		// - = 98
+		// | = 130
+		// 0 = 162
+		int pTex = 162;
+		switch(subrules & 0x3F)
+		{
+			case(SUBDIVIDE_3XY):
+			pTex = 1;
+			break;
+			case(SUBDIVIDE_1Y2XY):
+			pTex = 2;
+			break;
+			case(SUBDIVIDE_1X2XY):
+			pTex = 4;
+			break;
+			case(SUBDIVIDE_2Y1XY):
+			pTex = 6;
+			break;
+			case(SUBDIVIDE_2X1XY):
+			pTex = 10;
+			break;
+			case(SUBDIVIDE_3Y):
+			pTex = 14;
+			break;
+			case(SUBDIVIDE_3X):
+			pTex = 22;
+			break;
+			case(SUBDIVIDE_2XY):
+			pTex = 30;
+			break;
+			case(SUBDIVIDE_1Y1XY):
+			pTex = 34;
+			break;
+			case(SUBDIVIDE_1X1XY):
+			pTex = 42;
+			break;
+			case(SUBDIVIDE_2Y):
+			pTex = 50;
+			break;
+			case(SUBDIVIDE_2X):
+			pTex = 66;
+			break;
+			case(SUBDIVIDE_XY):
+			pTex = 82;
+			break;
+			case(SUBDIVIDE_Y):
+			pTex = 98;
+			break;
+			case(SUBDIVIDE_X):
+			pTex = 130;
+			break;
+		}
+
+		return pTex;
+}
 
 /*****
 Writes GVPLY data
@@ -597,9 +689,10 @@ Pretty ugly; I generate the data whilst writing it.
 void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 {
 
-	uint16_t first_portal = 254;
 	static unsigned char plane_information = 0;
-    for (unsigned int i=0; i<aModel->nbModels; i++){
+	static int wroteBytes = 0;
+    for (unsigned int i=0; i<aModel->nbModels; i++)
+	{
 		//////////////////////////////////////////////////////////////////
         //GVPLY, including buffers for the pointers
 		//////////////////////////////////////////////////////////////////
@@ -608,9 +701,10 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
         writeUint32(file, 0); //Empty 4-byte area for the PNTBL pointer [verts]
         writeUint32(file, 0); //Empty 4-byte area for the PLTBL pointer [polys]
 		writeUint32(file, 0); //Empty 4-byte area for the NMTBL pointer [normals]
-		writeUint32(file, 0); //Empty 4-byte area for the MAXTBL pointer [major axis]
 		writeUint32(file, 0); //Empty 4-byte area for the ATTBL pointer [attributes]
-
+		writeUint32(file, 0); //Empty 4-byte area for the MAXTBL pointer [major axis]
+		writeUint32(file, 0); //Empty 4-byte area for the LUMATBL pointer [light]
+		wroteBytes += 4 * 8;
 		//////////////////////////////////////////////////////////////////
         //POINT, 12 bytes each
 		// "pntbl"
@@ -618,6 +712,7 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
         for (unsigned int ii=0; ii<aModel->model[i].nbPoint; ii++) {
             for (unsigned int j=0; j<3; j++) {
                 writeSint32(file,toFIXED(aModel->model[i].pntbl[ii].point[j]));
+				wroteBytes += 4;
             }
         }
 
@@ -635,6 +730,7 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
             //Vertices //Vertice index, e.g. a polygon points to vertices 16, 21, 17, 20.
             for (unsigned int j=0; j<4; j++) {
                 writeUint16(file, aModel->model[i].pltbl[ii].vertIdx[j]);
+				wroteBytes += 2;
             }
         }
 		
@@ -648,7 +744,32 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
             for (unsigned int j=0; j<3; j++) 
 			{
                 writeSint32(file, toFIXED(aModel->model[i].pltbl[ii].normal[j]));
+				wroteBytes += 4;
 			}
+		}
+		
+		//////////////////////////////////////////////////////////////////
+        //ATTR, many bytes each, changes month to month tbh
+		// "attbl"
+		//////////////////////////////////////////////////////////////////
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
+        {
+
+			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags);
+			wroteBytes += 2;
+			
+			plane_information = get_plane_information(aModel->model, ii);
+			aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.uv_id = get_initial_uv_id(plane_information);
+			//But how will I support defining a UV coordinate?
+			// I guess for a specific material you can apply a UV offset? Anyway, this is right for now.
+			//cout << (int)aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.uv_id << "\n";
+            file->write((char*)&plane_information, sizeof(uint8_t));
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.uv_id, sizeof(uint8_t));
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector, sizeof(uint8_t));
+			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector, sizeof(uint8_t));
+			wroteBytes += 4;
+			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.texno);
+			wroteBytes += 2;
 		}
 		
 		//////////////////////////////////////////////////////////////////
@@ -678,42 +799,35 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 			}
 			
 			file->write((char*)&axis_id, sizeof(uint8_t));
+			wroteBytes += 1;
+		}
+		
+		//////////////////////////////////////////////////////////////////
+		//Luma table, 1 byte each.
+		//It should be at least 2 bytes aligned, based on what's written before. Pending testing.
+		//////////////////////////////////////////////////////////////////
+		for(unsigned int ii=0; ii < aModel->model[i].nbPolygon; ii++)
+		{
+			
+			file->write((char*)&aModel->model[i].pltbl[ii].luma, sizeof(uint8_t));
+			wroteBytes += 1;
 		}
 		
 		//We just wrote a bunch of single bytes.
 		//This amount of single bytes could be odd, which would throw off the alignment.
-		//We don't need to be four-bytes aligned, only two past this point. For now.
-		//So if we wrote an odd number of bytes for an odd number of polygons, write an extra byte to align it.
-		//The model loader needs to also be aware of this extra byte.
-		if(aModel->model[i].nbPolygon & 1)
+		//We need it to be four-bytes aligned.
+		if(wroteBytes & 1)
 		{
 			file->write((char*)&i, sizeof(uint8_t));
+			wroteBytes += 1;
+		} 
+		if(wroteBytes & 2)
+		{
+			file->write((char*)&i, sizeof(uint8_t));
+			file->write((char*)&i, sizeof(uint8_t));
+			wroteBytes += 2;
 		}
-		
-		//////////////////////////////////////////////////////////////////
-        //ATTR, many bytes each, changes month to month tbh
-		// "attbl"
-		//////////////////////////////////////////////////////////////////
-        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
-        {
 
-			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags);
-
-			plane_information = get_plane_information(aModel->model, ii);
-            file->write((char*)&plane_information, sizeof(uint8_t));
-			//cout << (int)plane_information << "\n";
-			if(aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information == 254)
-			{
-			file->write((char*)&first_portal, sizeof(uint8_t));
-			first_portal = ii;
-			} else {
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.portal_information, sizeof(uint8_t));
-			}
-			
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector, sizeof(uint8_t));
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector, sizeof(uint8_t));
-			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.texno);
-		}
 	}
 
 }

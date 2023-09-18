@@ -69,6 +69,7 @@ typedef struct
 {
     unsigned int vertIdx[4];
     int texture;
+	int luma;
     float normal[3];
 } polygon_t;
 
@@ -95,7 +96,7 @@ Render data flags:
 	  Dual-plane	Mesh	 Polyline		MSB On		Tex. flip	  		Sorting rule
 	Byte 2 of render_data_flags:
 	|	8		|	9		|	10		|	11		|	12	 -	13	|	14		|	15		|		
-	Subdivision	  Collision		Ladder	Climbable		Portal Specs	 			On/off
+	Subdivision	  Collision		Ladder	Climbable		Portal Specs	Anim		On/off
 */
 	#define GV_FLAG_SINGLE		(0x1) // Zero, dual-plane. One, single-plane.
 	#define GV_FLAG_MESH		(0x2) // Zero, no mesh. One, mesh.
@@ -107,6 +108,7 @@ Render data flags:
 	#define GV_FLAG_CLIMBABLE	(0x800) //Boolean. 1 = Climbable. 0 = not climbable.
 	#define GV_FLAG_PORTAL		(0x1000) //Boolean. 0, not a portal. 1, is a portal.
 	#define GV_FLAG_PORT_IN		(0x2000) //Boolean. 0, portal OUT processing. 1, portal IN processing.
+	#define GV_FLAG_ANIM		(0x4000) //Boolean. 0, texture will not animate. 1, texture is potentially animated.
 	#define GV_FLAG_DISPLAY		(0x8000) //Boolean. 1, polygon is treated as polygon. 0, polygon is not rendered. 
 	#define GV_SORT_MAX			(0x40)
 	#define GV_SORT_CEN			(0x80)
@@ -132,14 +134,28 @@ Information about the scale and subdivision rules of the plane.
 6-7: ???
 */
 
-	#define SUBDIVIDE_W		(1)
-	#define SUBDIVIDE_H		(2)
-	#define SUBDIVIDE_HV	(3)
+	#define SUBDIVIDE_X		(1) // |
+	#define SUBDIVIDE_Y		(2) // -
+	#define SUBDIVIDE_XY	(3) // +
+	
+	#define SUBDIVIDE_3XY	(0x3F) // +++
+	#define SUBDIVIDE_1Y2XY	(0x3E) // -++
+	#define SUBDIVIDE_1X2XY	(0x3D) // |++
+	#define SUBDIVIDE_2Y1XY	(0x3A) // --+
+	#define SUBDIVIDE_2X1XY	(0x35) // ||+
+	#define SUBDIVIDE_3Y	(0x2A) // ---
+	#define SUBDIVIDE_3X	(0x15) // |||
+	
+	#define SUBDIVIDE_2XY	(0xF) // ++
+	#define SUBDIVIDE_1Y1XY	(0xE) // -+
+	#define SUBDIVIDE_1X1XY	(0xD) // |+
+	#define SUBDIVIDE_2Y	(0xA) // --
+	#define SUBDIVIDE_2X	(0x5) // ||
 
 typedef struct {
 	uint16_t render_data_flags;
 	uint8_t plane_information;
-	uint8_t portal_information;
+	uint8_t uv_id;
 	uint8_t first_sector;
 	uint8_t second_sector;
 	uint16_t texno;
@@ -152,14 +168,15 @@ typedef struct {
 } _quad;
 
 typedef struct {
-    uint32_t nbPoint;	/* Number of vertices */
-    uint32_t nbPolygon;	/* Number of polygons */
+    uint32_t nbPoint;		/* Number of vertices */
+    uint32_t nbPolygon;		/* Number of polygons */
     POINT *		pntbl;		/* Vertex position data table */
     _quad *		pltbl;		/* Polygon definition table */
 	POINT *		nmtbl;		/* Normal definition table */
-	uint8_t *	maxtbl;		/* Major axis table */
+	uint8_t * maxtbl;		/* Major axis table */
     gvAtr *		attbl;		/* The attribute table for the polygon */
-} GVPLY;
+	uint8_t * lumatbl;		/* Lighting table, as <<9 units. */
+} GVPLY ;
 
 //////////////////////////////////
 //	Numerical Normal ID Shorthands

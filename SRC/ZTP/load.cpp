@@ -297,6 +297,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 	int numIndx = 0;
 	int numLadder = 0;
 	int numClimbable = 0;
+	int numAnim = 0;
 
     for (unsigned short i=startPtr; i<endPtr; i++)
     {
@@ -310,12 +311,12 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
         std::size_t findMedu = t->name.find("MEDU_");  //Mesh + dual plane polys
         std::size_t findDark = t->name.find("DARK_");  //Dark polys
         std::size_t findPort = t->name.find("PORT_");  // Invisible portal-defining polygon
-        std::size_t findOccl = t->name.find("OCCL_");  // Invisible occluder-defining polygon
+        std::size_t findBarr = t->name.find("BARR_");  // Invisible barrier-defining polygon
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
 		//// Starting to get whacky
 		int np = 0;
-		std::size_t findParams[256];		// Also textures whose names will be texture ID numbers, not file names
+		std::size_t findParams[512];		// Also textures whose names will be texture ID numbers, not file names
 		//Non-portals
 		findParams[np++]	= t->name.find("NDMG0_");   // No subdivision, dual-plane, mesh, no collision
 		findParams[np++]	= t->name.find("NDM00_");   // No subdivision, dual-plane, mesh, colllision
@@ -325,6 +326,16 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("N0M00_");   // No subdivision, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("N00G0_");   // No subdivision, single-plane, opaque, no collision
 		findParams[np++]	= t->name.find("N0000_");   // No subdivision, single-plane, opaque, collision
+
+		findParams[np++]	= t->name.find("ADMG0_");   // Animated, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ADM00_");   // Animated, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("AD0G0_");   // Animated, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A0MG0_");   // Animated, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("AD000_");   // Animated, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("A0M00_");   // Animated, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("A00G0_");   // Animated, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A0000_");   // Animated, single-plane, opaque, collision
+
 		findParams[np++]	= t->name.find("0DMG0_");   // Dividable, dual-plane, mesh, no collision
 		findParams[np++]	= t->name.find("0DM00_");   // Dividable, dual-plane, mesh, colllision
 		findParams[np++]	= t->name.find("0D0G0_");   // Dividable, dual-plane, opaque, no collision
@@ -332,7 +343,9 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("0D000_");   // Dividable, dual plane, opaque, collision
 		findParams[np++]	= t->name.find("00M00_");   // Dividable, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("000G0_");   // Dividable, single-plane, opaque, no collision
-
+		//
+		// Ladder/climbables
+		//
 		findParams[np++]	= t->name.find("NDML0_");   // No subdivision, dual-plane, mesh, ladder
 		findParams[np++]	= t->name.find("NDMC0_");   // No subdivision, dual-plane, mesh, climbable
 		findParams[np++]	= t->name.find("ND0L0_");   // No subdivision, dual-plane, opaque, ladder
@@ -341,6 +354,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("N0MC0_");   // No subdivision, single-plane, mesh, climbable
 		findParams[np++]	= t->name.find("N00L0_");   // No subdivision, single-plane, opaque, ladder
 		findParams[np++]	= t->name.find("N00C0_");   // No subdivision, single-plane, opaque, climbable
+		
 		findParams[np++]	= t->name.find("0DML0_");   // Dividable, dual-plane, mesh, ladder
 		findParams[np++]	= t->name.find("0DMC0_");   // Dividable, dual-plane, mesh, climbable
 		findParams[np++]	= t->name.find("0D0L0_");   // Dividable, dual-plane, opaque, ladder
@@ -366,24 +380,44 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("0D00P_");   // Dividable, dual plane, opaque, collision
 		findParams[np++]	= t->name.find("00M0P_");   // Dividable, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("000GP_");   // Dividable, single-plane, opaque, no collision
-		//'O' for occluder for PORTAL OUT
-		findParams[np++]	= t->name.find("NDMGO_");   // No subdivision, dual-plane, mesh, no collision
-		findParams[np++]	= t->name.find("NDM0O_");   // No subdivision, dual-plane, mesh, colllision
-		findParams[np++]	= t->name.find("ND0GO_");   // No subdivision, dual-plane, opaque, no collision
-		findParams[np++]	= t->name.find("N0MGO_");   // No subdivision, single-plane, mesh, no collision
-		findParams[np++]	= t->name.find("ND00O_");   // No subdivision, dual plane, opaque, collision
-		findParams[np++]	= t->name.find("N0M0O_");   // No subdivision, single-plane, mesh, collision
-		findParams[np++]	= t->name.find("N00GO_");   // No subdivision, single-plane, opaque, no collision
-		findParams[np++]	= t->name.find("N000O_");   // No subdivision, single-plane, opaque, collision
-		findParams[np++]	= t->name.find("0DMGO_");   // Dividable, dual-plane, mesh, no collision
-		findParams[np++]	= t->name.find("0DM0O_");   // Dividable, dual-plane, mesh, colllision
-		findParams[np++]	= t->name.find("0D0GO_");   // Dividable, dual-plane, opaque, no collision
-		findParams[np++]	= t->name.find("00MGO_");   // Dividable, single-plane, mesh, no collision
-		findParams[np++]	= t->name.find("0D00O_");   // Dividable, dual plane, opaque, collision
-		findParams[np++]	= t->name.find("00M0O_");   // Dividable, single-plane, mesh, collision
-		findParams[np++]	= t->name.find("000GO_");   // Dividable, single-plane, opaque, no collision
 		
-		findParams[np++]	= t->name.find("0000O_");   // Dividable, single-plane, opaque, collision, occluder
+		findParams[np++]	= t->name.find("ADMGP_");   // Animated, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ADM0P_");   // Animated, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("AD0GP_");   // Animated, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A0MGP_");   // Animated, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("AD00P_");   // Animated, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("A0M0P_");   // Animated, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("A00GP_");   // Animated, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A000P_");   // Animated, single-plane, opaque, collision
+		
+		//'B' for occlusion Barrier for PORTAL OUT
+		findParams[np++]	= t->name.find("NDMGB_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("NDM0B_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("ND0GB_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N0MGB_");   // No subdivision, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ND00B_");   // No subdivision, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("N0M0B_");   // No subdivision, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("N00GB_");   // No subdivision, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N000B_");   // No subdivision, single-plane, opaque, collision
+		
+		findParams[np++]	= t->name.find("0DMGB_");   // Dividable, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0DM0B_");   // Dividable, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("0D0GB_");   // Dividable, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("00MGB_");   // Dividable, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0D00B_");   // Dividable, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("00M0B_");   // Dividable, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("000GB_");   // Dividable, single-plane, opaque, no collision
+		
+		findParams[np++]	= t->name.find("ADMGB_");   // Animated, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ADM0B_");   // Animated, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("AD0GB_");   // Animated, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A0MGB_");   // Animated, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("AD00B_");   // Animated, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("A0M0B_");   // Animated, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("A00GB_");   // Animated, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A000B_");   // Animated, single-plane, opaque, collision
+
+		findParams[np++]	= t->name.find("0000B_");   // Dividable, single-plane, opaque, collision, occluder
 		findParams[np++]	= t->name.find("0000P_");   // Dividable, single-plane, opaque, collision, portal
 
 		bool found_special = false;
@@ -395,7 +429,6 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 				break;
 			}
 		}
-
 
         std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
 
@@ -420,7 +453,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{
 			numDual++;
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		//t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
@@ -429,7 +462,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{
 			numMesh++;
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		//t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
@@ -440,7 +473,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{
 			numMedu++;
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		//t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_MESH;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
@@ -451,7 +484,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{
 			numDark++;
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		//t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DARK;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
@@ -462,7 +495,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			numPort++;
 		//No SGL attr
 		//It's a portal. This is linked list information, write as if it is the last in the list.
-		t->GV_ATTR.portal_information = 254;
+		//t->GV_ATTR.portal_information = 254;
 
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PORT_IN;
@@ -471,12 +504,12 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		//Do NOT flag visible.
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		
-		} else if(findOccl == 0)
+		} else if(findBarr == 0)
 		{
 			numPort++;
 		//No SGL attr
 		//It's a portal. This is linked list information, write as if it is the last in the list.
-		t->GV_ATTR.portal_information = 254;
+		//t->GV_ATTR.portal_information = 254;
 
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
@@ -488,7 +521,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{
 			numGost++;
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		//t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		//In this case, the "PHYS" flag is left 0.
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
@@ -504,14 +537,23 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		std::size_t findG = t->name.find("G");
 		std::size_t findL = t->name.find("L");
 		std::size_t findC = t->name.find("C");
-		std::size_t findO = t->name.find("O");
+		std::size_t findB = t->name.find("B");
 		std::size_t findP = t->name.find("P");
+		std::size_t findA = t->name.find("A");
 
 		// In case of defining a portal which will not be displayed,
-		// the terms "PORT_" and "OCCL_" will be used for port IN and port OUT, respectively.
+		// the terms "PORT_" and "BARR_" will be used for port IN and port OUT, respectively.
 		// Hitherto, everything in here, portal or not, will be displayed.
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
-
+		if(findA == 0)
+		{
+			//Animated texture assignment
+			t->GV_ATTR.render_data_flags |= GV_FLAG_ANIM;
+			numAnim++;
+			//Animated textures cannot be subdivided
+			t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
+			numNdiv++;
+		}
 		if(findN == 0)
 		{	//No subdivision
 			t->GV_ATTR.render_data_flags |= GV_FLAG_NDIV;
@@ -551,16 +593,16 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{ //portal IN
 			t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
 			t->GV_ATTR.render_data_flags |= GV_FLAG_PORT_IN;
-			t->GV_ATTR.portal_information = 254;
+			//t->GV_ATTR.portal_information = 254;
 			numPort++;
-		} else if(findO == 4)
+		} else if(findB == 4)
 		{ //portal OUT (occlusion)
 			t->GV_ATTR.render_data_flags |= GV_FLAG_PORTAL;
-			t->GV_ATTR.portal_information = 254;
+			//t->GV_ATTR.portal_information = 254;
 			numPort++;
 		} else {
 			//Polygon is not a portal
-			t->GV_ATTR.portal_information = 255; 
+			//t->GV_ATTR.portal_information = 255; 
 		}
 		
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
@@ -569,7 +611,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 
 			numNormal++;
 
-		t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
+		//t->GV_ATTR.portal_information = 255; //Polygon is not a portal.
 
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
@@ -577,7 +619,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
 		}
 
-		if(found_special != true && findIndx == string::npos && findPort == string::npos && findOccl == string::npos)
+		if(found_special != true && findIndx == string::npos && findPort == string::npos && findBarr == string::npos)
 		{
 			t->GV_ATTR.texno = i;
 		} else if(found_special == true)
@@ -589,7 +631,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			newname.erase(newname.begin(), newname.begin()+6);
 			t->GV_ATTR.texno = stoi(newname);
 			numIndx++;
-		} else if(findIndx == 0 || findPort == 0 || findOccl == 0)
+		} else if(findIndx == 0 || findPort == 0 || findBarr == 0)
 		{
 			//Different branch for different prefix length (5)
 			std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
@@ -612,7 +654,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		cout << "\n " << numMedu << " mesh & dual plane textures ";
 		cout << "\n " << numDark << " dark textures ";
 		cout << "\n " << numNdiv << " No subdivision textures ";
-		cout << "\n " << numGost << " No collision textures \n";
+		cout << "\n " << numGost << " No collision textures ";
+		cout << "\n " << numAnim << " animated textures \n";
 
 		cout << "\n " << number_of_unique_items << " unique items";
 		cout << "\n " << number_of_items << " total items \n";
