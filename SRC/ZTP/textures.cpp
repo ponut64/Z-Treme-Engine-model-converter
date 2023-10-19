@@ -258,6 +258,7 @@ int ReadTGAFile (string folder, texture_t * t)
         std::size_t findBarr = t->name.find("BARR_");  // Invisible barrier-defining polygon
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
+		std::size_t findUnmp = t->name.find("UNMP_");   // Unrender map polygons underneath this polygon (special type)
 		//// Starting to get whacky
 		int np = 0;
 		std::size_t findParams[512];		// Also textures whose names will be texture ID numbers, not file names
@@ -374,7 +375,7 @@ int ReadTGAFile (string folder, texture_t * t)
 			}
 		}
 
-		if(found_special || findIndx == 0 || findPort == 0 || findBarr == 0)
+		if(found_special || findIndx == 0 || findPort == 0 || findBarr == 0 || findUnmp == 0)
 		{
 			cout << t->name + "\n";
 			cout << "Texture was determined to be by-index, no texture loaded/generated \n";

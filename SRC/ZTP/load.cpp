@@ -314,6 +314,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
         std::size_t findBarr = t->name.find("BARR_");  // Invisible barrier-defining polygon
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
+		std::size_t findUnmp = t->name.find("UNMP_");   // Unrender map polygons underneath this polygon (special type)
 		//// Starting to get whacky
 		int np = 0;
 		std::size_t findParams[512];		// Also textures whose names will be texture ID numbers, not file names
@@ -458,6 +459,12 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
+		} else if(findUnmp == 0)
+		{
+		//Technically a type of portal, but we don't flag these as portals.
+		t->GV_ATTR.render_data_flags = GV_SPECIAL_FLAG_UNRENDER_MAP;
+			numPort++;
+
 		} else if(findMesh == 0)
 		{
 			numMesh++;
