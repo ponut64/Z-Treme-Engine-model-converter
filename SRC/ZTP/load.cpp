@@ -433,6 +433,11 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 
         std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
 
+		//What this does: looks for the ";" terminator, 
+		//then uses the first character as an integer for "first sector",
+		//what i want: looks for the ";" terminator,
+		//then uses all remaining characters as an integer, not to exceed 255.
+		//Maybe?
 		if(findSectorSpecs != std::string::npos)
 		{
 			newname = t->name;
@@ -440,14 +445,8 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			newname.erase(newname.end()-1, newname.end());
 			t->GV_ATTR.first_sector = atoi(newname.c_str());
 
-			newname = t->name;
-			newname.erase(newname.begin(), newname.end()-1);
-
-			t->GV_ATTR.second_sector = atoi(newname.c_str());
-
 			cout << "\n " << t->name << " for this texture ";
-			cout << "\n " << (int)t->GV_ATTR.first_sector << " is the first sector ";
-			cout << "\n " << (int)t->GV_ATTR.second_sector << " is the second sector \n";
+			cout << "\n " << (int)t->GV_ATTR.first_sector << " is the sector ";
 		}
 
 		if(findDual == 0) //If DUAL is found at the start

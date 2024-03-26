@@ -533,14 +533,28 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 
 }
 
-unsigned char	get_plane_information(model_t * mesh, int poly_index)
+void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_information, unsigned char * plane_information)
 {
+	
 	static int subdivision_rules[4] = {0, 0, 0, 0};
 
 		float * pl_pt0 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[0]].point;
 		float * pl_pt1 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[1]].point;
 		float * pl_pt2 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[2]].point;
 		float * pl_pt3 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[3]].point;
+		
+	int is_triangle = 0;
+	is_triangle = (mesh->pltbl[poly_index].vertIdx[0] == mesh->pltbl[poly_index].vertIdx[1]) ? 1 : 0;
+	is_triangle = (mesh->pltbl[poly_index].vertIdx[0] == mesh->pltbl[poly_index].vertIdx[2]) ? 1 : 0;
+	is_triangle = (mesh->pltbl[poly_index].vertIdx[0] == mesh->pltbl[poly_index].vertIdx[3]) ? 1 : 0;
+	
+	is_triangle = (mesh->pltbl[poly_index].vertIdx[1] == mesh->pltbl[poly_index].vertIdx[2]) ? 1 : 0;
+	is_triangle = (mesh->pltbl[poly_index].vertIdx[1] == mesh->pltbl[poly_index].vertIdx[3]) ? 1 : 0;
+	
+	is_triangle = (mesh->pltbl[poly_index].vertIdx[2] == mesh->pltbl[poly_index].vertIdx[3]) ? 1 : 0;
+	*tile_information = 0;
+	*plane_information = 0;
+//	if(is_triangle) return;
 								
 		int len01 = v3Dist(pl_pt0, pl_pt1);
 		int len12 = v3Dist(pl_pt1, pl_pt2);
@@ -550,11 +564,87 @@ unsigned char	get_plane_information(model_t * mesh, int poly_index)
 
 		int len_w = max(len01, len23); 
 		int len_h = max(len12, len30);
+		if(is_triangle)
+		{
+			len_w>>=2;
+			len_h>>=2;
+		}
+		
+		//Segment comment required
+
+		int tile_w = 0;
+		int tile_h = 0;
 	
 		subdivision_rules[0] = 0;
 		subdivision_rules[1] = 0;
 		subdivision_rules[2] = 0;
-		subdivision_rules[3] = (perimeter > 1200) ? 1 : 0;
+	
+			if(len_w >= (SUBDIVISION_SCALE<<3))
+			{
+				subdivision_rules[0] = SUBDIVIDE_X;
+				tile_w++;
+			}
+			if(len_w >= (SUBDIVISION_SCALE<<4))
+			{
+				subdivision_rules[1] = SUBDIVIDE_X;
+				tile_w++;
+			}
+			if(len_w >= (SUBDIVISION_SCALE<<5))
+			{
+				subdivision_rules[2] = SUBDIVIDE_X;
+				tile_w++;
+			}
+			
+			if(len_h >= (SUBDIVISION_SCALE<<3))
+			{
+				subdivision_rules[0] = (subdivision_rules[0] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
+				tile_h++;
+			}
+			if(len_h >= (SUBDIVISION_SCALE<<4))
+			{
+				subdivision_rules[1] = (subdivision_rules[1] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
+				tile_h++;
+			}
+			if(len_h >= (SUBDIVISION_SCALE<<5))
+			{
+				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
+				tile_h++;
+			}
+			
+		//Changes order:
+		// ++* turns to *++, and +* turns to *+, and +** turns to **+
+		if(subdivision_rules[0] == SUBDIVIDE_XY && subdivision_rules[2] && subdivision_rules[2] != SUBDIVIDE_XY)
+		{
+			//If +**, turns to **+
+			//If ++*, turns to *++
+			//If +*, no change
+			subdivision_rules[0] = subdivision_rules[2];
+			subdivision_rules[2] = SUBDIVIDE_XY;
+		}
+		if(subdivision_rules[0] == SUBDIVIDE_XY && subdivision_rules[1] && subdivision_rules[1] != SUBDIVIDE_XY)
+		{
+			//If +**, prior rule will have turned to **+
+			//If ++*, prior rule will have turned to *++
+			//If +*, turns to *+
+			subdivision_rules[0] = subdivision_rules[1];
+			subdivision_rules[1] = SUBDIVIDE_XY;
+		}
+			
+			unsigned char pl_rules = subdivision_rules[0];
+			pl_rules |= subdivision_rules[1]<<2;
+			pl_rules |= subdivision_rules[2]<<4;
+			pl_rules |= subdivision_rules[3]<<6;
+			//Don't allow large triangles (to be subdivided into tiles).
+			if(!is_triangle)
+			{
+			*plane_information = pl_rules;
+			}
+		len_w >>= tile_w;
+		len_h >>= tile_h;
+	
+		subdivision_rules[0] = 0;
+		subdivision_rules[1] = 0;
+		subdivision_rules[2] = 0;
 	
 			if(len_w >= SUBDIVISION_SCALE)
 			{
@@ -601,11 +691,11 @@ unsigned char	get_plane_information(model_t * mesh, int poly_index)
 			subdivision_rules[1] = SUBDIVIDE_XY;
 		}
 			
-			unsigned char subrules = subdivision_rules[0];
-			subrules |= subdivision_rules[1]<<2;
-			subrules |= subdivision_rules[2]<<4;
-			subrules |= subdivision_rules[3]<<6;
-			return subrules;
+			unsigned char tile_rules = subdivision_rules[0];
+			tile_rules |= subdivision_rules[1]<<2;
+			tile_rules |= subdivision_rules[2]<<4;
+			tile_rules |= subdivision_rules[3]<<6;
+			*tile_information = tile_rules;
 	
 }
 		
@@ -690,6 +780,8 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 {
 
 	static unsigned char plane_information = 0;
+	static unsigned char tile_information = 0;
+	static unsigned char uv_id = 0;
 	static int wroteBytes = 0;
     for (unsigned int i=0; i<aModel->nbModels; i++)
 	{
@@ -758,15 +850,15 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags);
 			wroteBytes += 2;
 			
-			plane_information = get_plane_information(aModel->model, ii);
-			aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.uv_id = get_initial_uv_id(plane_information);
+			get_plane_information(aModel->model, ii, &tile_information, &plane_information);
+			uv_id = get_initial_uv_id(tile_information);
 			//But how will I support defining a UV coordinate?
 			// I guess for a specific material you can apply a UV offset? Anyway, this is right for now.
 			//cout << (int)aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.uv_id << "\n";
-            file->write((char*)&plane_information, sizeof(uint8_t));
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.uv_id, sizeof(uint8_t));
+            file->write((char*)&tile_information, sizeof(uint8_t));
+			file->write((char*)&plane_information, sizeof(uint8_t));
+			file->write((char*)&uv_id, sizeof(uint8_t));
 			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.first_sector, sizeof(uint8_t));
-			file->write((char*)&aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.second_sector, sizeof(uint8_t));
 			wroteBytes += 4;
 			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.texno);
 			wroteBytes += 2;

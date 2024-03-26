@@ -32,8 +32,6 @@ using namespace std;
 #define CAN_JUMP (1)
 #define MAX_SPRITES             (2000)
 
-#define SUBDIVISION_SCALE (40)
-
 const float conv              = M_PI/180.0f;
 
 enum
@@ -157,12 +155,13 @@ Information about the scale and subdivision rules of the plane.
 	#define SUBDIVIDE_2Y	(0xA) // --
 	#define SUBDIVIDE_2X	(0x5) // ||
 
+	#define SUBDIVISION_SCALE (64)
 typedef struct {
 	uint16_t render_data_flags;
+	uint8_t tile_information;
 	uint8_t plane_information;
 	uint8_t uv_id;
 	uint8_t first_sector;
-	uint8_t second_sector;
 	uint16_t texno;
 } gvAtr;
 
