@@ -564,11 +564,11 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 
 		int len_w = max(len01, len23); 
 		int len_h = max(len12, len30);
-		if(is_triangle)
-		{
-			len_w>>=2;
-			len_h>>=2;
-		}
+		//if(is_triangle)
+		//{
+		//	len_w>>=2;
+		//	len_h>>=2;
+		//}
 		
 		//Segment comment required
 

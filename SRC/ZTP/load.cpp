@@ -440,13 +440,21 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		//Maybe?
 		if(findSectorSpecs != std::string::npos)
 		{
+
+			
 			newname = t->name;
-			newname.erase(newname.begin(), newname.end()-2);
-			newname.erase(newname.end()-1, newname.end());
-			t->GV_ATTR.first_sector = atoi(newname.c_str());
+			newname.erase(0, findSectorSpecs+1);
+			int raw_sect = atoi(newname.c_str());
+			if(raw_sect > 255 || raw_sect < 0)
+			{
+				cout  << "\n Error: Invalid sector number; marking as zero";
+				raw_sect = 0;
+			}
+			
+			t->GV_ATTR.first_sector = (unsigned char)raw_sect;
 
 			cout << "\n " << t->name << " for this texture ";
-			cout << "\n " << (int)t->GV_ATTR.first_sector << " is the sector ";
+			cout << " " << (int)t->GV_ATTR.first_sector << " is the sector ";
 		}
 
 		if(findDual == 0) //If DUAL is found at the start
