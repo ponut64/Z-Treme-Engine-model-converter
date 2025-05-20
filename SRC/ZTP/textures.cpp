@@ -259,6 +259,7 @@ int ReadTGAFile (string folder, texture_t * t)
 		std::size_t findIndx = t->name.find("INDX_");   // Textures whose names will be texture ID numbers, not file names
 		std::size_t findGost = t->name.find("GOST_");   // No collision polygons (for BUILD-type)
 		std::size_t findUnmp = t->name.find("UNMP_");   // Unrender map polygons underneath this polygon (special type)
+		std::size_t findMove = t->name.find("MOVE_");	// Specification for a an opaque plane of a MOVER-type (sector data).
 		//// Starting to get whacky
 		int np = 0;
 		std::size_t findParams[512];		// Also textures whose names will be texture ID numbers, not file names
@@ -288,6 +289,32 @@ int ReadTGAFile (string folder, texture_t * t)
 		findParams[np++]	= t->name.find("0D000_");   // Dividable, dual plane, opaque, collision
 		findParams[np++]	= t->name.find("00M00_");   // Dividable, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("000G0_");   // Dividable, single-plane, opaque, no collision
+		//
+		// Mover-type (movers cannot contain portals)
+		// (specified by "T" for transporting as the 'M" qualifier is consumed by Mesh
+		findParams[np++]	= t->name.find("NDMGT_");   // No subdivision, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("NDM0T_");   // No subdivision, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("ND0GT_");   // No subdivision, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N0MGT_");   // No subdivision, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ND00T_");   // No subdivision, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("N0M0T_");   // No subdivision, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("N00GT_");   // No subdivision, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("N000T_");   // No subdivision, single-plane, opaque, collision
+		findParams[np++]	= t->name.find("ADMGT_");   // Animated, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("ADM0T_");   // Animated, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("AD0GT_");   // Animated, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A0MGT_");   // Animated, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("AD00T_");   // Animated, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("A0M0T_");   // Animated, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("A00GT_");   // Animated, single-plane, opaque, no collision
+		findParams[np++]	= t->name.find("A000T_");   // Animated, single-plane, opaque, collision
+		findParams[np++]	= t->name.find("0DMGT_");   // Dividable, dual-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0DM0T_");   // Dividable, dual-plane, mesh, colllision
+		findParams[np++]	= t->name.find("0D0GT_");   // Dividable, dual-plane, opaque, no collision
+		findParams[np++]	= t->name.find("00MGT_");   // Dividable, single-plane, mesh, no collision
+		findParams[np++]	= t->name.find("0D00T_");   // Dividable, dual plane, opaque, collision
+		findParams[np++]	= t->name.find("00M0T_");   // Dividable, single-plane, mesh, collision
+		findParams[np++]	= t->name.find("000GT_");   // Dividable, single-plane, opaque, no collision
 		//
 		// Ladder/climbables
 		//
@@ -375,7 +402,7 @@ int ReadTGAFile (string folder, texture_t * t)
 			}
 		}
 
-		if(found_special || findIndx == 0 || findPort == 0 || findBarr == 0 || findUnmp == 0)
+		if(found_special || findIndx == 0 || findPort == 0 || findBarr == 0 || findUnmp == 0 || findMove == 0)
 		{
 			cout << t->name + "\n";
 			cout << "Texture was determined to be by-index, no texture loaded/generated \n";

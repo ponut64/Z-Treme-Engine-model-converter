@@ -116,7 +116,7 @@ Render data flags:
 	#define GV_FLIP_HV			(0x30)
 	#define GET_SORT_DATA(n)	(n & 0xC0)
 	#define GET_FLIP_DATA(n)	(n & 0x30)
-	
+	#define GV_SCTR_MOVER		(0xF0) //Special flag only scanned for on sector data. Marks the surface as belonging to a MOVER.
 	
 	//Speicl Flags. These flags do NOT imply the combination of the individual flags.
 	//Instead, something special happens when all of these conditions are met.
