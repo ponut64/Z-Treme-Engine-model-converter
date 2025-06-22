@@ -230,10 +230,16 @@ typedef struct
     uint16_t endFrm;
 } animationControl_t;
 
-extern int		item_exception_vertices[64][4];
-extern int		items[64];
-extern int		item_number_package[64];
-extern float	item_positions[64][XYZ];
+#define MAX_SECTORS (64)
+#define INVALID_PLANE		(0xFFFF)
+#define INVALID_SECTOR		(MAX_SECTORS)
+#define MAX_ITEMS (256)
+extern int		item_sectors[MAX_ITEMS]; //(contains active list of item sector #)
+extern int		item_sector_package[MAX_ITEMS]; //(contains the unique sector identifiers for item types)
+extern int		item_exception_vertices[MAX_ITEMS][4];
+extern int		items[MAX_ITEMS];
+extern int		item_number_package[MAX_ITEMS];
+extern float	item_positions[MAX_ITEMS][XYZ];
 extern int		number_of_items;
 extern int		number_of_unique_items;
 

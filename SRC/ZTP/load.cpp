@@ -3,10 +3,12 @@
     extern int ReadTGAFile (string folder, texture_t * texture);
 	extern int ReadPaletteFile (void);
 
-	int		item_exception_vertices[64][4];
-	int		items[64];
-	int		item_number_package[64];
-	float	item_positions[64][XYZ];
+	int		item_sectors[MAX_ITEMS];
+	int		item_sector_package[MAX_ITEMS];
+	int		item_exception_vertices[MAX_ITEMS][4];
+	int		items[MAX_ITEMS];
+	int		item_number_package[MAX_ITEMS];
+	float	item_positions[MAX_ITEMS][XYZ];
 	int		number_of_items = 0;
 	int		number_of_unique_items = 0;
 
@@ -165,6 +167,7 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
             stringstream MtlSS(line);         string bufferStr;
             getline(MtlSS, bufferStr, ' ');
             string mtlName = {""};
+			string newname = {""};
             MtlSS >> mtlName;
 			std::size_t findItem = mtlName.find("ITEM_");
 			if(findItem != 0)
@@ -183,10 +186,36 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 			//	If the prefix "ITEM_" is found, the text following the prefix is converted to integer (stoi).
 			//	This information is written to the item number package array, which lists the unique item numbers.
 			//	This material/texture is not stored in the texture list.
+			//
+			//	This has later been modified to enable sector specifications, should they exist.
 			//////////////////////////////////////////////////////////////////////
-				mtlName.erase(mtlName.begin(), mtlName.begin()+5);
+				std::size_t findSectorSpecs = mtlName.find(";");  // Find the sector specifications of a name
+				newname = mtlName;
+				item_sector_package[number_of_unique_items] = INVALID_SECTOR;
+				if(findSectorSpecs != std::string::npos)
+				{
+		
+					newname.erase(0, findSectorSpecs+1);
+					int raw_sect = atoi(newname.c_str());
+					if(raw_sect > 255 || raw_sect < 0)
+					{
+						cout  << "\n Error: Invalid sector number; marking as invalid";
+						raw_sect = INVALID_SECTOR;
+					}
+					
+					item_sector_package[number_of_unique_items] = (unsigned char)raw_sect;
+					
+					newname = mtlName;
+					newname.erase(newname.end()-3, newname.end());
+					
+					//cout << "\n " << newname;
+				}
+			
+				newname.erase(newname.begin(), newname.begin()+5);
+
 				//Convert string to integer (stoi).
-				item_number_package[number_of_unique_items] = stoi(mtlName, 0);
+				item_number_package[number_of_unique_items] = stoi(newname, 0);
+
 				number_of_unique_items++;
 				//We're working with an item now.
 				working_with_item = 1;
@@ -245,12 +274,17 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 				cout << item_positions[number_of_items][X] << "\n ";
 				cout << item_positions[number_of_items][Y] << "\n ";
 				cout << item_positions[number_of_items][Z] << "\n ";
+				cout << "With sector assigned: \n";
+				cout << item_sector_package[number_of_unique_items-1] << "\n ";
+				cout << "For item #: \n";
+				cout << number_of_items << "\n ";
 
 				item_exception_vertices[number_of_items][0] = ptv[0];
 				item_exception_vertices[number_of_items][1] = ptv[1];
 				item_exception_vertices[number_of_items][2] = ptv[2];
 				item_exception_vertices[number_of_items][3] = ptv[3];
 				items[number_of_items] = item_number_package[number_of_unique_items-1];
+				item_sectors[number_of_items] = item_sector_package[number_of_unique_items-1];
 				number_of_items++;
 			} else {
 				o_PDATA->pltbl[o_PDATA->nbPolygon]=bufPol;

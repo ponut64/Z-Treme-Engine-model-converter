@@ -1032,7 +1032,7 @@ WRITES COMPRESSED NORMALS AS 1-BYTE ANORM.H ENTRY
 	// Write item data
 	// 0byte : total # of items
 	// 1byte : number of unique items
-	// then : 8 bytes per item : #, x, y, z, each a <short>
+	// then : 8 bytes per item : #, x, y, z, sector#, each a <short>
 	////////////////////////////////////////////
 void	write_item_data(ofstream * file, animated_model_t * aModel)
 {
@@ -1054,6 +1054,7 @@ void	write_item_data(ofstream * file, animated_model_t * aModel)
 		writeSint16(file, (short)((int)item_positions[i][X]));
 		writeSint16(file, (short)((int)item_positions[i][Y]));
 		writeSint16(file, (short)((int)item_positions[i][Z]));
+		writeSint16(file, (short)((int)item_sectors[i]));
 	}
 }
 
