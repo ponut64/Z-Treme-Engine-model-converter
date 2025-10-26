@@ -240,6 +240,7 @@ extern int		item_exception_vertices[MAX_ITEMS][4];
 extern int		items[MAX_ITEMS];
 extern int		item_number_package[MAX_ITEMS];
 extern float	item_positions[MAX_ITEMS][XYZ];
+extern float 	item_normals[MAX_ITEMS][XYZ];
 extern int		number_of_items;
 extern int		number_of_unique_items;
 
@@ -251,6 +252,8 @@ int32_t         swap_endian_sint( int32_t value);
 /**Functions**/
 float	v3Dist(float * a, float * b);
 float dotProduct(float * vct1, float * vct2);
+void	crossf(float vector1[3], float vector2[3], float output[3]);
+void	fnormalize(float vec[3]);
 animated_model_t * loading(void);
 
 #endif // COMMON_H

@@ -52,7 +52,7 @@ int ReadTGAHeader(unsigned char * readByte, TGA_HEADER * header)
 	
 	unsigned char imdat = header->idlength + header->colourmaplength + 18;
 	
-	img_data_addr = (unsigned char *)((unsigned int)readByte + imdat);
+	img_data_addr = (unsigned char *)((uint64_t)readByte + imdat);
 
 	return 0;
 }

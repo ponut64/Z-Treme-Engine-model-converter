@@ -1,3 +1,4 @@
+
 #include "../COMMON.H"
 
 int USE_SGL = 1; //For now, default option?
@@ -535,50 +536,50 @@ void	poly_face_sort(polygon_t * poly, vertex_t * vList)
 
 void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_information, unsigned char * plane_information)
 {
-	
+
 	static int subdivision_rules[4] = {0, 0, 0, 0};
 
 		float * pl_pt0 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[0]].point;
 		float * pl_pt1 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[1]].point;
 		float * pl_pt2 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[2]].point;
 		float * pl_pt3 = mesh->pntbl[mesh->pltbl[poly_index].vertIdx[3]].point;
-		
+
 	int is_triangle = 0;
 	is_triangle = (mesh->pltbl[poly_index].vertIdx[0] == mesh->pltbl[poly_index].vertIdx[1]) ? 1 : 0;
 	is_triangle = (mesh->pltbl[poly_index].vertIdx[0] == mesh->pltbl[poly_index].vertIdx[2]) ? 1 : 0;
 	is_triangle = (mesh->pltbl[poly_index].vertIdx[0] == mesh->pltbl[poly_index].vertIdx[3]) ? 1 : 0;
-	
+
 	is_triangle = (mesh->pltbl[poly_index].vertIdx[1] == mesh->pltbl[poly_index].vertIdx[2]) ? 1 : 0;
 	is_triangle = (mesh->pltbl[poly_index].vertIdx[1] == mesh->pltbl[poly_index].vertIdx[3]) ? 1 : 0;
-	
+
 	is_triangle = (mesh->pltbl[poly_index].vertIdx[2] == mesh->pltbl[poly_index].vertIdx[3]) ? 1 : 0;
 	*tile_information = 0;
 	*plane_information = 0;
 //	if(is_triangle) return;
-								
+
 		int len01 = v3Dist(pl_pt0, pl_pt1);
 		int len12 = v3Dist(pl_pt1, pl_pt2);
 		int len23 = v3Dist(pl_pt2, pl_pt3);
 		int len30 = v3Dist(pl_pt3, pl_pt0);
 		int perimeter = len01 + len12 + len23 + len30;
 
-		int len_w = max(len01, len23); 
+		int len_w = max(len01, len23);
 		int len_h = max(len12, len30);
 		//if(is_triangle)
 		//{
 		//	len_w>>=2;
 		//	len_h>>=2;
 		//}
-		
+
 		//Segment comment required
 
 		int tile_w = 0;
 		int tile_h = 0;
-	
+
 		subdivision_rules[0] = 0;
 		subdivision_rules[1] = 0;
 		subdivision_rules[2] = 0;
-	
+
 			if(len_w >= (SUBDIVISION_SCALE<<3))
 			{
 				subdivision_rules[0] = SUBDIVIDE_X;
@@ -594,7 +595,7 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 				subdivision_rules[2] = SUBDIVIDE_X;
 				tile_w++;
 			}
-			
+
 			if(len_h >= (SUBDIVISION_SCALE<<3))
 			{
 				subdivision_rules[0] = (subdivision_rules[0] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
@@ -610,7 +611,7 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
 				tile_h++;
 			}
-			
+
 		//Changes order:
 		// ++* turns to *++, and +* turns to *+, and +** turns to **+
 		if(subdivision_rules[0] == SUBDIVIDE_XY && subdivision_rules[2] && subdivision_rules[2] != SUBDIVIDE_XY)
@@ -629,7 +630,7 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 			subdivision_rules[0] = subdivision_rules[1];
 			subdivision_rules[1] = SUBDIVIDE_XY;
 		}
-			
+
 			unsigned char pl_rules = subdivision_rules[0];
 			pl_rules |= subdivision_rules[1]<<2;
 			pl_rules |= subdivision_rules[2]<<4;
@@ -641,11 +642,11 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 			}
 		len_w >>= tile_w;
 		len_h >>= tile_h;
-	
+
 		subdivision_rules[0] = 0;
 		subdivision_rules[1] = 0;
 		subdivision_rules[2] = 0;
-	
+
 			if(len_w >= SUBDIVISION_SCALE)
 			{
 				subdivision_rules[0] = SUBDIVIDE_X;
@@ -658,7 +659,7 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 			{
 				subdivision_rules[2] = SUBDIVIDE_X;
 			}
-			
+
 			if(len_h >= SUBDIVISION_SCALE)
 			{
 				subdivision_rules[0] = (subdivision_rules[0] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
@@ -671,7 +672,7 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 			{
 				subdivision_rules[2] = (subdivision_rules[2] == SUBDIVIDE_X) ? SUBDIVIDE_XY : SUBDIVIDE_Y;
 			}
-			
+
 		//Changes order:
 		// ++* turns to *++, and +* turns to *+, and +** turns to **+
 		if(subdivision_rules[0] == SUBDIVIDE_XY && subdivision_rules[2] && subdivision_rules[2] != SUBDIVIDE_XY)
@@ -690,18 +691,18 @@ void	get_plane_information(model_t * mesh, int poly_index, unsigned char * tile_
 			subdivision_rules[0] = subdivision_rules[1];
 			subdivision_rules[1] = SUBDIVIDE_XY;
 		}
-			
+
 			unsigned char tile_rules = subdivision_rules[0];
 			tile_rules |= subdivision_rules[1]<<2;
 			tile_rules |= subdivision_rules[2]<<4;
 			tile_rules |= subdivision_rules[3]<<6;
 			*tile_information = tile_rules;
-	
+
 }
-		
+
 unsigned char	get_initial_uv_id(unsigned char subrules)
 {
-	
+
 		//Basic forward process:
 		// +++ = 1
 		// -++ = 2
@@ -813,7 +814,7 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
         //POLYGON, 8 bytes for the vertices
 		// "pltbl"
 		//////////////////////////////////////////////////////////////////
-        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) 
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
 		{
 			//spesh[ii] = 0;
 
@@ -825,21 +826,21 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 				wroteBytes += 2;
             }
         }
-		
-		
+
+
 		//////////////////////////////////////////////////////////////////
         //NORMALS for POLYGONS, 12 bytes for 32-bit normal
 		// "nmtbl"
 		//////////////////////////////////////////////////////////////////
-        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) 
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
 		{
-            for (unsigned int j=0; j<3; j++) 
+            for (unsigned int j=0; j<3; j++)
 			{
                 writeSint32(file, toFIXED(aModel->model[i].pltbl[ii].normal[j]));
 				wroteBytes += 4;
 			}
 		}
-		
+
 		//////////////////////////////////////////////////////////////////
         //ATTR, many bytes each, changes month to month tbh
 		// "attbl"
@@ -849,7 +850,7 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 
 			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.render_data_flags);
 			wroteBytes += 2;
-			
+
 			get_plane_information(aModel->model, ii, &tile_information, &plane_information);
 			uv_id = get_initial_uv_id(tile_information);
 			//But how will I support defining a UV coordinate?
@@ -863,17 +864,17 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 			writeUint16(file, aModel->texture[aModel->model[i].pltbl[ii].texture].GV_ATTR.texno);
 			wroteBytes += 2;
 		}
-		
+
 		//////////////////////////////////////////////////////////////////
         //MAJOR AXIS for POLYGONS. Optimization shortcut for collision.
 		// "maxtbl"
 		//////////////////////////////////////////////////////////////////
-        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++) 
+        for (unsigned int ii=0; ii< aModel->model[i].nbPolygon; ii++)
 		{
 			float abs_normal[3] = {fabs(aModel->model[i].pltbl[ii].normal[0]),
 			fabs(aModel->model[i].pltbl[ii].normal[1]),
 			fabs(aModel->model[i].pltbl[ii].normal[2])};
-            
+
 			float max_axis = 0;
 			uint8_t axis_id = 0;
 			if(abs_normal[1] >= abs_normal[0])
@@ -889,22 +890,22 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 				max_axis = abs_normal[2];
 				axis_id = (aModel->model[i].pltbl[ii].normal[2] >= 0) ? N_Zp : N_Zn;
 			}
-			
+
 			file->write((char*)&axis_id, sizeof(uint8_t));
 			wroteBytes += 1;
 		}
-		
+
 		//////////////////////////////////////////////////////////////////
 		//Luma table, 1 byte each.
 		//It should be at least 2 bytes aligned, based on what's written before. Pending testing.
 		//////////////////////////////////////////////////////////////////
 		for(unsigned int ii=0; ii < aModel->model[i].nbPolygon; ii++)
 		{
-			
+
 			file->write((char*)&aModel->model[i].pltbl[ii].luma, sizeof(uint8_t));
 			wroteBytes += 1;
 		}
-		
+
 		//We just wrote a bunch of single bytes.
 		//This amount of single bytes could be odd, which would throw off the alignment.
 		//We need it to be four-bytes aligned.
@@ -912,7 +913,7 @@ void WRITE_GVPLY(ofstream * file, animated_model_t * aModel)
 		{
 			file->write((char*)&i, sizeof(uint8_t));
 			wroteBytes += 1;
-		} 
+		}
 		if(wroteBytes & 2)
 		{
 			file->write((char*)&i, sizeof(uint8_t));
@@ -1032,7 +1033,7 @@ WRITES COMPRESSED NORMALS AS 1-BYTE ANORM.H ENTRY
 	// Write item data
 	// 0byte : total # of items
 	// 1byte : number of unique items
-	// then : 8 bytes per item : #, x, y, z, sector#, each a <short>
+	// then : 16 bytes per item : #, x, y, z, nx, ny, nz, sector#, each a <short>
 	////////////////////////////////////////////
 void	write_item_data(ofstream * file, animated_model_t * aModel)
 {
@@ -1050,10 +1051,32 @@ void	write_item_data(ofstream * file, animated_model_t * aModel)
 	// number, x pos, y pos, z pos : 2 bytes * 4 = 8 bytes for each item
 	for(int i = 0; i < number_of_items; i++)
 	{
+		//Holding Normal
+		int normal[3] = {0,0,0};
+		normal[X] = toFIXED(item_normals[i][X]);
+		if(normal[X] >= 65536) normal[X] = 65535;
+		if(normal[X] <= (-65536)) normal[X] = -65535;
+		
+		normal[Y] = toFIXED(item_normals[i][Y]);
+		if(normal[Y] >= 65536) normal[Y] = 65535;
+		if(normal[Y] <= (-65536)) normal[Y] = -65535;
+		
+		normal[Z] = toFIXED(item_normals[i][Z]);
+		if(normal[Z] >= 65536) normal[Z] = 65535;
+		if(normal[Z] <= (-65536)) normal[Z] = -65535;
+		
+		//Compact normals into Sint16
+		normal[X]>>=1;
+		normal[Y]>>=1;
+		normal[Z]>>=1;
+		
 		writeUint16(file, (unsigned short)items[i]);
 		writeSint16(file, (short)((int)item_positions[i][X]));
 		writeSint16(file, (short)((int)item_positions[i][Y]));
 		writeSint16(file, (short)((int)item_positions[i][Z]));
+		writeSint16(file, (short)((int)normal[X]));
+		writeSint16(file, (short)((int)normal[Y]));
+		writeSint16(file, (short)((int)normal[Z]));
 		writeSint16(file, (short)((int)item_sectors[i]));
 	}
 }

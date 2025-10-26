@@ -5,7 +5,7 @@
 		<Option title="GVP_Compiler" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
-		<Option virtualFolders="SRC\ZTP\;" />
+		<Option virtualFolders="SRC/ZTP/" />
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/GVP_Compiler" prefix_auto="1" extension_auto="1" />
@@ -13,8 +13,15 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-g" />
+					<Add option="-std=c++11" />
+					<Add option="-m64" />
 				</Compiler>
+				<Linker>
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m64" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/GVP_Compiler" prefix_auto="1" extension_auto="1" />
@@ -44,10 +51,6 @@
 		<Unit filename="main.cpp">
 			<Option virtualFolder="SRC/ZTP/" />
 		</Unit>
-		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
-		</Extensions>
+		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

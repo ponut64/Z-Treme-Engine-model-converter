@@ -1,3 +1,4 @@
+
 #include "../COMMON.H"
 
     extern int ReadTGAFile (string folder, texture_t * texture);
@@ -9,6 +10,7 @@
 	int		items[MAX_ITEMS];
 	int		item_number_package[MAX_ITEMS];
 	float	item_positions[MAX_ITEMS][XYZ];
+	float	item_normals[MAX_ITEMS][XYZ];
 	int		number_of_items = 0;
 	int		number_of_unique_items = 0;
 
@@ -194,7 +196,7 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 				item_sector_package[number_of_unique_items] = INVALID_SECTOR;
 				if(findSectorSpecs != std::string::npos)
 				{
-		
+
 					newname.erase(0, findSectorSpecs+1);
 					int raw_sect = atoi(newname.c_str());
 					if(raw_sect > 255 || raw_sect < 0)
@@ -202,15 +204,15 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 						cout  << "\n Error: Invalid sector number; marking as invalid";
 						raw_sect = INVALID_SECTOR;
 					}
-					
+
 					item_sector_package[number_of_unique_items] = (unsigned char)raw_sect;
-					
+
 					newname = mtlName;
 					newname.erase(newname.end()-3, newname.end());
-					
+
 					//cout << "\n " << newname;
 				}
-			
+
 				newname.erase(newname.begin(), newname.begin()+5);
 
 				//Convert string to integer (stoi).
@@ -245,6 +247,9 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 			//	If the polygon in the OBJ followed an "ITEM_" material, we should have the item # stored.
 			//	Convert the polygon information into a single-point by averaging the position of all four points.
 			//	Then store the information from the item name as associated with this item's location.
+			//
+			//	We also want to calculate a normal. In this case, we will be making a normal for the polygon.
+			//	Note that Blender (by default) does not generate polygon normals, but it does generate vertex normals (for a cube, or something?).
 			//////////////////////////////////////////////////////////////////////
 			if(working_with_item == 1)
 			{
@@ -270,10 +275,37 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
 														o_PDATA->pntbl[ptv[3]].point[Z]
 														) / 4.0;
 
+				//In case of generating a normal for polygon, cross-product opposite edges.
+				float AminusC[3] = {0,0,0};
+				float BminusD[3] = {0,0,0};
+				//Makes a vector from point 3 to point 1.
+				AminusC[X] = (o_PDATA->pntbl[ptv[3]].point[X] - o_PDATA->pntbl[ptv[1]].point[X]);
+				AminusC[Y] = (o_PDATA->pntbl[ptv[3]].point[Y] - o_PDATA->pntbl[ptv[1]].point[Y]);
+				AminusC[Z] = (o_PDATA->pntbl[ptv[3]].point[Z] - o_PDATA->pntbl[ptv[1]].point[Z]);
+				//Makes a vector from point 2 to point 0.
+				BminusD[X] = (o_PDATA->pntbl[ptv[2]].point[X] - o_PDATA->pntbl[ptv[0]].point[X]);
+				BminusD[Y] = (o_PDATA->pntbl[ptv[2]].point[Y] - o_PDATA->pntbl[ptv[0]].point[Y]);
+				BminusD[Z] = (o_PDATA->pntbl[ptv[2]].point[Z] - o_PDATA->pntbl[ptv[0]].point[Z]);
+				
+				float normal[3] = {0,0,0};
+				
+				crossf(AminusC,BminusD,normal);
+				fnormalize(normal);
+				
+				item_normals[number_of_items][X] = normal[X];
+				item_normals[number_of_items][Y] = normal[Y];
+				item_normals[number_of_items][Z] = normal[Z];
+				
+
+
 				cout << "Created Item at Pos: \n";
 				cout << item_positions[number_of_items][X] << "\n ";
 				cout << item_positions[number_of_items][Y] << "\n ";
 				cout << item_positions[number_of_items][Z] << "\n ";
+				cout << "Item Normal: \n";
+				cout << item_normals[number_of_items][X] << "\n ";
+				cout << item_normals[number_of_items][Y] << "\n ";
+				cout << item_normals[number_of_items][Z] << "\n ";
 				cout << "With sector assigned: \n";
 				cout << item_sector_package[number_of_unique_items-1] << "\n ";
 				cout << "For item #: \n";
@@ -417,7 +449,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("N0MC0_");   // No subdivision, single-plane, mesh, climbable
 		findParams[np++]	= t->name.find("N00L0_");   // No subdivision, single-plane, opaque, ladder
 		findParams[np++]	= t->name.find("N00C0_");   // No subdivision, single-plane, opaque, climbable
-		
+
 		findParams[np++]	= t->name.find("0DML0_");   // Dividable, dual-plane, mesh, ladder
 		findParams[np++]	= t->name.find("0DMC0_");   // Dividable, dual-plane, mesh, climbable
 		findParams[np++]	= t->name.find("0D0L0_");   // Dividable, dual-plane, opaque, ladder
@@ -443,7 +475,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("0D00P_");   // Dividable, dual plane, opaque, collision
 		findParams[np++]	= t->name.find("00M0P_");   // Dividable, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("000GP_");   // Dividable, single-plane, opaque, no collision
-		
+
 		findParams[np++]	= t->name.find("ADMGP_");   // Animated, dual-plane, mesh, no collision
 		findParams[np++]	= t->name.find("ADM0P_");   // Animated, dual-plane, mesh, colllision
 		findParams[np++]	= t->name.find("AD0GP_");   // Animated, dual-plane, opaque, no collision
@@ -452,7 +484,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("A0M0P_");   // Animated, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("A00GP_");   // Animated, single-plane, opaque, no collision
 		findParams[np++]	= t->name.find("A000P_");   // Animated, single-plane, opaque, collision
-		
+
 		//'B' for occlusion Barrier for PORTAL OUT
 		findParams[np++]	= t->name.find("NDMGB_");   // No subdivision, dual-plane, mesh, no collision
 		findParams[np++]	= t->name.find("NDM0B_");   // No subdivision, dual-plane, mesh, colllision
@@ -462,7 +494,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("N0M0B_");   // No subdivision, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("N00GB_");   // No subdivision, single-plane, opaque, no collision
 		findParams[np++]	= t->name.find("N000B_");   // No subdivision, single-plane, opaque, collision
-		
+
 		findParams[np++]	= t->name.find("0DMGB_");   // Dividable, dual-plane, mesh, no collision
 		findParams[np++]	= t->name.find("0DM0B_");   // Dividable, dual-plane, mesh, colllision
 		findParams[np++]	= t->name.find("0D0GB_");   // Dividable, dual-plane, opaque, no collision
@@ -470,7 +502,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		findParams[np++]	= t->name.find("0D00B_");   // Dividable, dual plane, opaque, collision
 		findParams[np++]	= t->name.find("00M0B_");   // Dividable, single-plane, mesh, collision
 		findParams[np++]	= t->name.find("000GB_");   // Dividable, single-plane, opaque, no collision
-		
+
 		findParams[np++]	= t->name.find("ADMGB_");   // Animated, dual-plane, mesh, no collision
 		findParams[np++]	= t->name.find("ADM0B_");   // Animated, dual-plane, mesh, colllision
 		findParams[np++]	= t->name.find("AD0GB_");   // Animated, dual-plane, opaque, no collision
@@ -495,7 +527,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 
         std::size_t findSectorSpecs = t->name.find(";");  // Find the sector specifications of a name
 
-		//What this does: looks for the ";" terminator, 
+		//What this does: looks for the ";" terminator,
 		//then uses the first character as an integer for "first sector",
 		//what i want: looks for the ";" terminator,
 		//then uses all remaining characters as an integer, not to exceed 255.
@@ -503,7 +535,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		if(findSectorSpecs != std::string::npos)
 		{
 
-			
+
 			newname = t->name;
 			newname.erase(0, findSectorSpecs+1);
 			int raw_sect = atoi(newname.c_str());
@@ -512,7 +544,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 				cout  << "\n Error: Invalid sector number; marking as zero";
 				raw_sect = 0;
 			}
-			
+
 			t->GV_ATTR.first_sector = (unsigned char)raw_sect;
 
 			cout << "\n " << t->name << " for this texture ";
@@ -579,7 +611,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
 		//Do NOT flag visible.
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
-		
+
 		} else if(findBarr == 0)
 		{
 			numPort++;
@@ -592,7 +624,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		t->GV_ATTR.render_data_flags |= GV_SORT_MIN;
 		//Do NOT flag visible.
 		//t->GV_ATTR.render_data_flags |= GV_FLAG_DISPLAY;
-		
+
 		} else if(findGost == 0)
 		{
 			numGost++;
@@ -608,7 +640,7 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 		{
 
 			numMover++;
-			
+
 		t->GV_ATTR.render_data_flags |= GV_SCTR_MOVER;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_SINGLE;
 		t->GV_ATTR.render_data_flags |= GV_FLAG_PHYS;
@@ -690,16 +722,16 @@ void specialConditions(unsigned short startPtr, unsigned short endPtr, animated_
 			numPort++;
 		} else {
 			//Polygon is not a portal
-			//t->GV_ATTR.portal_information = 255; 
+			//t->GV_ATTR.portal_information = 255;
 		}
-		
+
 		if(findT == 4)
 		{
 			//Issue flags appropriate for a mover.
 			t->GV_ATTR.render_data_flags |= GV_SCTR_MOVER;
 			numMover++;
 		}
-		
+
 		t->GV_ATTR.render_data_flags |= GV_SORT_CEN;
 
 		} else {

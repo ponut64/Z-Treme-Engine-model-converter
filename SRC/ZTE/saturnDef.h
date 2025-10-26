@@ -1,3 +1,6 @@
+#include <cstdint>
+
+
 #define	    toFIXED(a)		((int32_t)(65536.0 * (a)))
 #define	    POStoFIXED(x,y,z)	{toFIXED(x),toFIXED(y),toFIXED(z)}
 #define	    ATTRIBUTE(f,s,t,c,g,a,d,o)	{f,(s)|(((d)>>16)&0x1c)|(o),t,(a)|(((d)>>24)&0xc0),c,g,(d)&0x3f}
