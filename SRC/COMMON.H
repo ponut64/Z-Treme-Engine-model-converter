@@ -30,7 +30,6 @@ using namespace std;
 #define MIN(x, y)	((x) < (y) ? (x) : (y))
 
 #define CAN_JUMP (1)
-#define MAX_SPRITES             (2000)
 
 const float conv              = M_PI/180.0f;
 

@@ -110,8 +110,8 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
             MeshPtr++;
             aModel->model[MeshPtr].nbPoint=0;
             aModel->model[MeshPtr].nbPolygon=0;
-            aModel->model[MeshPtr].pntbl = new vertex_t[1024];
-            aModel->model[MeshPtr].pltbl = new polygon_t[1024];
+            aModel->model[MeshPtr].pntbl = new vertex_t[(10 * 1024)];
+            aModel->model[MeshPtr].pltbl = new polygon_t[(10 * 1024)];
 
             o_PDATA = &aModel->model[MeshPtr];
             stringstream NameSS(line);            string buffer;            getline(NameSS, buffer, ' ');            NameSS >> buffer;
@@ -126,7 +126,9 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
             string sx = ""; string sy = ""; string sz = "";
             PointSS >> sx >> sy >> sz;
 
-            float fx=std::atof(sx.c_str()); float fy=std::atof(sy.c_str()); float fz=std::atof(sz.c_str());
+            float fx=std::atof(sx.c_str());
+			float fy=std::atof(sy.c_str());
+			float fz=std::atof(sz.c_str());
 
             if (keyFrameID==-1)
             {
@@ -134,7 +136,7 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
                 o_PDATA->pntbl[o_PDATA->nbPoint].point[Y] = fy;
                 o_PDATA->pntbl[o_PDATA->nbPoint].point[Z] = fz;
                 o_PDATA->nbPoint++;
-
+				cout << "\n Vert#:" << o_PDATA->nbPoint;
 				///////////////////////////////////////////
 				// Ponut64 Addition
 				// Check if the point is larger than the previously largest number on any axis.
@@ -151,7 +153,7 @@ bool load_OBJ_to_mesh(ifstream *file, animated_model_t * aModel, int keyFrameID)
                 aModel->keyFrames[keyFrameID].cVert[bufTotalVerts].point[Z] = fz;
                 bufTotalVerts++;
             }
-
+			
         }
         else if (line[0]== 'v' && line[1]== 't') //Texture coordinates...not implemented
         {
